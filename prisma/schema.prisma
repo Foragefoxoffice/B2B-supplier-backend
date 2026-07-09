@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  first_name  String
+  last_name   String
+  email       String    @unique
+  password    String
+  phone       String?
+  role_id     Int
+  supplier_id Int?
+  status      String    @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  role     Role      @relation(fields: [role_id], references: [id])
+  supplier Supplier? @relation(fields: [supplier_id], references: [id])
+
+  messages_sent     Message[]      @relation("Sender")
+  messages_received Message[]      @relation("Receiver")
+  notifications     Notification[]
+  activity_logs     ActivityLog[]
+  user_sessions     UserSession[]
+
+  @@map("users")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // SUPER_ADMIN, ADMIN, MANAGER, STAFF, SUPPLIER
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  module     String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       Int
+  permission_id Int
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model Supplier {
+  id             Int       @id @default(autoincrement())
+  supplier_code  String    @unique
+  name           String
+  gst            String?
+  pan            String?
+  email          String    @unique
+  phone          String
+  address        String
+  city           String
+  state          String
+  pincode        String
+  bank_name      String?
+  account_number String?
+  ifsc_code      String?
+  status         String    @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+
+  users           User[]
+  products        Product[]
+  purchase_orders PurchaseOrder[]
+  documents       Document[]
+
+  @@map("suppliers")
+}
+
+model Category {
+  id         Int       @id @default(autoincrement())
+  parent_id  Int?
+  name       String
+  status     String    @default("ACTIVE")
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parent_id], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id              Int       @id @default(autoincrement())
+  product_code    String    @unique
+  name            String
+  supplier_id     Int
+  category_id     Int
+  sub_category_id Int?
+  description     String?   @db.Text
+  specification   String?   @db.Text
+  unit            String // kg, pcs, box, etc.
+  price           Decimal   @db.Decimal(10, 2)
+  moq             Int       @default(1)
+  stock           Int       @default(0)
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  supplier Supplier            @relation(fields: [supplier_id], references: [id])
+  category Category            @relation(fields: [category_id], references: [id])
+  images   ProductImage[]
+  po_items PurchaseOrderItem[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  url        String
+  is_primary Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model PurchaseOrder {
+  id            Int       @id @default(autoincrement())
+  po_number     String    @unique
+  supplier_id   Int
+  date          DateTime
+  delivery_date DateTime?
+  terms         String?   @db.Text
+  remarks       String?   @db.Text
+  status        String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, MODIFICATION_REQUESTED, COMPLETED
+  total_amount  Decimal   @db.Decimal(12, 2)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+
+  supplier     Supplier            @relation(fields: [supplier_id], references: [id])
+  items        PurchaseOrderItem[]
+  confirmation OrderConfirmation?
+  dispatches   Dispatch[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                Int     @id @default(autoincrement())
+  purchase_order_id Int
+  product_id        Int
+  quantity          Int
+  rate              Decimal @db.Decimal(10, 2)
+  tax_percent       Decimal @default(0) @db.Decimal(5, 2)
+  discount          Decimal @default(0) @db.Decimal(10, 2)
+  amount            Decimal @db.Decimal(12, 2)
+
+  purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+  product        Product       @relation(fields: [product_id], references: [id])
+
+  @@map("purchase_order_items")
+}
+
+model OrderConfirmation {
+  id                Int      @id @default(autoincrement())
+  purchase_order_id Int      @unique
+  status            String // ACCEPTED, REJECTED, MODIFICATION_REQUESTED
+  remarks           String   @db.Text
+  created_at        DateTime @default(now())
+
+  purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_confirmations")
+}
+
+model Dispatch {
+  id                Int       @id @default(autoincrement())
+  dispatch_number   String    @unique
+  purchase_order_id Int
+  vehicle_number    String?
+  transport_name    String?
+  courier_name      String?
+  tracking_number   String?
+  lr_number         String?
+  invoice_number    String?
+  invoice_url       String?
+  dispatch_date     DateTime?
+  expected_delivery DateTime?
+  status            String    @default("DISPATCHED") // DISPATCHED, IN_TRANSIT, DELIVERED
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id])
+
+  @@map("dispatches")
+}
+
+model Document {
+  id          Int       @id @default(autoincrement())
+  supplier_id Int?
+  doc_type    String // PO, INVOICE, AGREEMENT, CHALLAN, CERTIFICATE, OTHER
+  title       String
+  file_url    String
+  created_at  DateTime  @default(now())
+  deleted_at  DateTime?
+
+  supplier Supplier? @relation(fields: [supplier_id], references: [id])
+
+  @@map("documents")
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  sender_id   Int
+  receiver_id Int?
+  room_id     String? // for order-wise chat, could be "PO-1234"
+  type        String   @default("TEXT") // TEXT, IMAGE, FILE, EMOJI
+  content     String   @db.Text
+  status      String   @default("SENT") // SENT, DELIVERED, READ
+  created_at  DateTime @default(now())
+
+  sender   User  @relation("Sender", fields: [sender_id], references: [id])
+  receiver User? @relation("Receiver", fields: [receiver_id], references: [id])
+
+  @@map("messages")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  type       String // NEW_PO, PO_APPROVED, DISPATCH_UPDATED, NEW_MESSAGE
+  title      String
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  user_id    Int?
+  action     String
+  module     String
+  details    String?  @db.Text
+  ip_address String?
+  created_at DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id])
+
+  @@map("activity_logs")
+}
+
+model UserSession {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  refresh_token String   @db.Text
+  expires_at    DateTime
+  created_at    DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+model Setting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updated_at  DateTime @updatedAt
+
+  @@map("settings")
+}

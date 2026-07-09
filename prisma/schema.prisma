@@ -98,13 +98,14 @@ model Supplier {
 }
 
 model Category {
-  id         Int       @id @default(autoincrement())
-  parent_id  Int?
-  name       String
-  status     String    @default("ACTIVE")
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  deleted_at DateTime?
+  id            Int       @id @default(autoincrement())
+  parent_id     Int?
+  category_code String    @default("")
+  name          String
+  status        String    @default("ACTIVE")
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parent_id], references: [id])
   children Category[] @relation("CategoryHierarchy")
@@ -126,6 +127,8 @@ model Product {
   price           Decimal   @db.Decimal(10, 2)
   moq             Int       @default(1)
   stock           Int       @default(0)
+  gst             String?
+  material        String?
   status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
@@ -143,6 +146,8 @@ model ProductImage {
   id         Int      @id @default(autoincrement())
   product_id Int
   url        String
+  color      String?
+  quantity   Int      @default(0)
   is_primary Boolean  @default(false)
   created_at DateTime @default(now())
 

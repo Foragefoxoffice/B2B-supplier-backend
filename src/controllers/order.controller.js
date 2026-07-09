@@ -86,7 +86,7 @@ exports.updateOrderStatus = async (req, res, next) => {
     
     // Determine who can do what.
     // Superadmin can set to COMPLETED. Supplier can set to ACCEPTED or REJECTED.
-    const allowedSupplierStatuses = ['ACCEPTED', 'REJECTED'];
+    const allowedSupplierStatuses = ['ACCEPTED', 'REJECTED', 'IN_PRODUCTION', 'DISPATCHED'];
     if (isSupplier && !allowedSupplierStatuses.includes(status)) {
       return res.status(403).json({ success: false, message: 'Supplier cannot transition to this status.' });
     }

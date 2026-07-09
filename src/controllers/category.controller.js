@@ -22,10 +22,11 @@ exports.getCategories = async (req, res, next) => {
 
 exports.createCategory = async (req, res, next) => {
   try {
-    const { name, parent_id, status } = req.body;
+    const { name, category_code, parent_id, status } = req.body;
     const category = await prisma.category.create({
       data: {
         name,
+        category_code: category_code || '',
         parent_id: parent_id ? parseInt(parent_id) : null,
         status: status || 'ACTIVE',
       }

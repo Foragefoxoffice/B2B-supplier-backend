@@ -105,7 +105,7 @@ exports.createProduct = async (req, res, next) => {
           url: `/uploads/${file.filename}`,
           color: fileMeta.color || null,
           quantity: fileMeta.quantity ? parseInt(fileMeta.quantity) : 0,
-          is_primary: index === 0
+          is_primary: metadata.length > 0 ? metadata.indexOf(fileMeta) === 0 : index === 0
         };
       });
       await prisma.productImage.createMany({ data: imageRecords });
@@ -226,7 +226,7 @@ exports.updateProduct = async (req, res, next) => {
         data: {
           color: imgMeta.color || null,
           quantity: imgMeta.quantity ? parseInt(imgMeta.quantity) : 0,
-          is_primary: false // We will set primary later
+          is_primary: metadata.indexOf(imgMeta) === 0
         }
       });
     }
@@ -245,7 +245,7 @@ exports.updateProduct = async (req, res, next) => {
             url: `/uploads/${file.filename}`,
             color: meta.color || null,
             quantity: meta.quantity ? parseInt(meta.quantity) : 0,
-            is_primary: false
+            is_primary: metadata.indexOf(meta) === 0
           });
         }
       }
@@ -255,18 +255,8 @@ exports.updateProduct = async (req, res, next) => {
       }
     }
     
-    // Enforce the first image is primary
-    const allImages = await prisma.productImage.findMany({
-      where: { product_id: productId },
-      orderBy: { id: 'asc' }
-    });
-    
-    for (let i = 0; i < allImages.length; i++) {
-      await prisma.productImage.update({
-        where: { id: allImages[i].id },
-        data: { is_primary: i === 0 }
-      });
-    }
+    // We removed the forced ID-based primary image enforcement because 
+    // we now determine the primary image based on the metadata array order.
     
     res.status(200).json({ success: true, data: updatedProduct });
   } catch (error) {

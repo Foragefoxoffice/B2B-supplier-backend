@@ -11,6 +11,7 @@ const productRoutes = require('./routes/product.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const orderRoutes = require('./routes/order.routes');
 const settingRoutes = require('./routes/setting.routes');
+const transporterRoutes = require('./routes/transporter.routes');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/transporters', transporterRoutes);
 
 // Error Handler Middleware
 app.use(errorHandler);

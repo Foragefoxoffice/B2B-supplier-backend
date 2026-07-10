@@ -93,6 +93,7 @@ model Supplier {
   products        Product[]
   purchase_orders PurchaseOrder[]
   documents       Document[]
+  transporters    Transporter[]
 
   @@map("suppliers")
 }
@@ -161,16 +162,20 @@ model PurchaseOrder {
   po_number     String    @unique
   supplier_id   Int
   date          DateTime
-  delivery_date DateTime?
-  terms         String?   @db.Text
-  remarks       String?   @db.Text
+  delivery_date   DateTime?
+  terms           String?   @db.Text
+  remarks         String?   @db.Text
+  order_given_by  String?   @db.VarChar(255)
+  phone_number    String?   @db.VarChar(50)
   status        String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, MODIFICATION_REQUESTED, COMPLETED
   total_amount  Decimal   @db.Decimal(12, 2)
+  transporter_id Int?
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
   deleted_at    DateTime?
 
   supplier     Supplier            @relation(fields: [supplier_id], references: [id])
+  transporter  Transporter?        @relation(fields: [transporter_id], references: [id])
   items        PurchaseOrderItem[]
   confirmation OrderConfirmation?
   dispatches   Dispatch[]
@@ -187,6 +192,8 @@ model PurchaseOrderItem {
   tax_percent       Decimal @default(0) @db.Decimal(5, 2)
   discount          Decimal @default(0) @db.Decimal(10, 2)
   amount            Decimal @db.Decimal(12, 2)
+  variant_id        Int?
+  remarks           String? @db.Text
 
   purchase_order PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
   product        Product       @relation(fields: [product_id], references: [id])
@@ -306,4 +313,19 @@ model Setting {
   updated_at  DateTime @updatedAt
 
   @@map("settings")
+}
+
+model Transporter {
+  id          Int      @id @default(autoincrement())
+  supplier_id Int
+  name        String
+  contact     String?
+  address     String?  @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  supplier        Supplier        @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  purchase_orders PurchaseOrder[]
+
+  @@map("transporters")
 }

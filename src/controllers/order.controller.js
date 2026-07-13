@@ -43,10 +43,14 @@ exports.getOrders = async (req, res, next) => {
     if (startDate || endDate) {
       whereClause.date = {};
       if (startDate) {
-        whereClause.date.gte = new Date(`${startDate}T00:00:00.000Z`);
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        whereClause.date.gte = start;
       }
       if (endDate) {
-        whereClause.date.lte = new Date(`${endDate}T23:59:59.999Z`);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereClause.date.lte = end;
       }
     }
 

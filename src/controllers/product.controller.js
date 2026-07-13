@@ -66,11 +66,42 @@ exports.createProduct = async (req, res, next) => {
   try {
     const data = { ...req.body };
     const supplier_id = req.user.role === 'SUPPLIER' ? req.user.supplier_id : parseInt(data.supplier_id);
+    const productCode = data.product_code || `PRD-${Date.now()}`;
     
+    // Check if product_code already exists for this supplier
+    const existingProduct = await prisma.product.findUnique({
+      where: { 
+        product_code_supplier_id: {
+          product_code: productCode,
+          supplier_id: supplier_id
+        }
+      }
+    });
+    
+    if (existingProduct) {
+      return res.status(400).json({ success: false, message: `A product with Design Code '${productCode}' already exists.` });
+    }
+
+    let metadata = [];
+    if (data.imagesMetadata) {
+      try {
+        metadata = JSON.parse(data.imagesMetadata);
+      } catch (e) {
+        console.error('Failed to parse imagesMetadata:', e);
+      }
+    }
+
+    let totalStock = 0;
+    if (metadata && metadata.length > 0) {
+      totalStock = metadata.reduce((acc, m) => acc + (parseInt(m.quantity) || 0), 0);
+    } else {
+      totalStock = data.stock ? parseInt(data.stock) : 0;
+    }
+
     // Convert to proper types
     const product = await prisma.product.create({
       data: {
-        product_code: data.product_code || `PRD-${Date.now()}`,
+        product_code: productCode,
         name: data.name,
         supplier_id,
         category_id: parseInt(data.category_id),
@@ -80,24 +111,15 @@ exports.createProduct = async (req, res, next) => {
         unit: data.unit || 'pcs',
         price: parseFloat(data.price),
         moq: data.moq ? parseInt(data.moq) : 1,
-        stock: data.stock ? parseInt(data.stock) : 0,
+        stock: totalStock,
         gst: data.gst || null,
         material: data.material || null,
-        status: 'PENDING'
+        status: 'APPROVED'
       }
     });
 
     // Handle images if any
     if (req.files && req.files.length > 0) {
-      let metadata = [];
-      if (data.imagesMetadata) {
-        try {
-          metadata = JSON.parse(data.imagesMetadata);
-        } catch (e) {
-          console.error('Failed to parse imagesMetadata:', e);
-        }
-      }
-
       const imageRecords = req.files.map((file, index) => {
         const fileMeta = metadata.find(m => m.isNew && m.fileIndex === index) || {};
         return {
@@ -109,6 +131,17 @@ exports.createProduct = async (req, res, next) => {
         };
       });
       await prisma.productImage.createMany({ data: imageRecords });
+    }
+
+    if (req.user && req.user.role === 'SUPPLIER') {
+      const notificationService = require('../services/notification.service');
+      const supplier = await prisma.supplier.findUnique({ where: { id: req.user.supplier_id } });
+      const supplierName = supplier ? supplier.name : 'A supplier';
+      notificationService.sendNotificationToAdmins(
+          'New Product Added',
+          `${supplierName} has added a new product: ${data.name} (${productCode})`,
+          'NEW_PRODUCT'
+      ).catch(err => console.error('Failed to notify admins of new product:', err));
     }
 
     res.status(201).json({ success: true, data: product });
@@ -163,25 +196,24 @@ exports.updateProduct = async (req, res, next) => {
     
     const supplier_id = req.user.role === 'SUPPLIER' ? req.user.supplier_id : (data.supplier_id ? parseInt(data.supplier_id) : product.supplier_id);
     
-    // 2. Update basic product information
-    const updatedProduct = await prisma.product.update({
-      where: { id: productId },
-      data: {
-        product_code: data.product_code || product.product_code,
-        name: data.name,
-        category_id: parseInt(data.category_id),
-        description: data.description,
-        price: parseFloat(data.price),
-        moq: data.moq ? parseInt(data.moq) : 1,
-        unit: data.unit || 'pcs',
-        gst: data.gst || null,
-        material: data.material || null,
-        supplier_id,
-        status: req.user.role === 'SUPPLIER' ? 'PENDING' : product.status
-      }
-    });
+    const productCode = data.product_code || product.product_code;
     
-    // 3. Handle images updates
+    if (productCode !== product.product_code) {
+      // Check if new product_code already exists for this supplier
+      const existingProduct = await prisma.product.findUnique({
+        where: { 
+          product_code_supplier_id: {
+            product_code: productCode,
+            supplier_id: supplier_id
+          }
+        }
+      });
+      if (existingProduct) {
+        return res.status(400).json({ success: false, message: `A product with Design Code '${productCode}' already exists.` });
+      }
+    }
+
+    // 2. Parse images metadata and calculate total stock
     let metadata = [];
     if (data.imagesMetadata) {
       try {
@@ -190,7 +222,34 @@ exports.updateProduct = async (req, res, next) => {
         console.error('Failed to parse imagesMetadata in update:', e);
       }
     }
+
+    let totalStock = 0;
+    if (metadata && metadata.length > 0) {
+      totalStock = metadata.reduce((acc, m) => acc + (parseInt(m.quantity) || 0), 0);
+    } else {
+      totalStock = data.stock ? parseInt(data.stock) : product.stock;
+    }
+
+    // 3. Update basic product information
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        product_code: productCode,
+        name: data.name,
+        category_id: parseInt(data.category_id),
+        description: data.description,
+        price: parseFloat(data.price),
+        moq: data.moq ? parseInt(data.moq) : 1,
+        unit: data.unit || 'pcs',
+        stock: totalStock,
+        gst: data.gst || null,
+        material: data.material || null,
+        supplier_id,
+        status: product.status
+      }
+    });
     
+    // 4. Handle images updates
     // Separate existing images from new uploads in metadata
     const keptImages = metadata.filter(img => !img.isNew);
     const keptIds = keptImages.map(img => img.id);
@@ -258,6 +317,17 @@ exports.updateProduct = async (req, res, next) => {
     // We removed the forced ID-based primary image enforcement because 
     // we now determine the primary image based on the metadata array order.
     
+    if (req.user && req.user.role === 'SUPPLIER') {
+      const notificationService = require('../services/notification.service');
+      const supplier = await prisma.supplier.findUnique({ where: { id: req.user.supplier_id } });
+      const supplierName = supplier ? supplier.name : 'A supplier';
+      notificationService.sendNotificationToAdmins(
+          'Product Updated',
+          `${supplierName} has updated product details/quantity for: ${data.name} (${productCode})`,
+          'PRODUCT_UPDATE'
+      ).catch(err => console.error('Failed to notify admins of product update:', err));
+    }
+
     res.status(200).json({ success: true, data: updatedProduct });
   } catch (error) {
     next(error);

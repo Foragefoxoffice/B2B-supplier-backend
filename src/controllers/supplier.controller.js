@@ -1,5 +1,7 @@
 const prisma = require('../config/db');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const { createTransporter } = require('../utils/email');
 
 exports.getSuppliers = async (req, res, next) => {
   try {
@@ -119,8 +121,9 @@ exports.createSupplier = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'A user or supplier with this email already exists.' });
     }
 
-    // Hash default password
-    const hashedPassword = await bcrypt.hash('Supplier@123', 10);
+    // Auto-generate password
+    const plainPassword = crypto.randomBytes(4).toString('hex');
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     // Use a transaction to ensure both Supplier and User are created atomically
     const result = await prisma.$transaction(async (tx) => {
@@ -147,6 +150,49 @@ exports.createSupplier = async (req, res, next) => {
 
       return supplier;
     });
+
+    const notificationService = require('../services/notification.service');
+    // Notify admins about new supplier
+    notificationService.sendNotificationToAdmins(
+      'New Supplier Created',
+      `Supplier ${data.name} (${data.supplier_code}) has been created.`,
+      'SUPPLIER_CREATED'
+    ).catch(err => console.error('Failed to send supplier creation notification:', err));
+
+    // Send email to supplier
+    const transporter = createTransporter();
+    if (transporter) {
+      try {
+        await transporter.sendMail({
+          from: `"B2B Supplier Portal" <${process.env.SMTP_USER}>`,
+          to: data.email,
+          subject: 'Your Supplier Account Created',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+              <h2 style="color: #1e3a8a; text-align: center;">Welcome to B2B Supplier Portal</h2>
+              <p style="color: #334155; font-size: 16px;">Hello ${data.name},</p>
+              <p style="color: #334155; font-size: 16px;">Your supplier account has been successfully created. Here are your login credentials:</p>
+              <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Email:</strong> ${data.email}</p>
+                <p style="margin: 5px 0;"><strong>Password:</strong> ${plainPassword}</p>
+              </div>
+              <p style="color: #334155; font-size: 14px;">Please login and change your password as soon as possible.</p>
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            </div>
+          `,
+        });
+        console.log(`Welcome email sent to ${data.email}.`);
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        console.log(`\n=========================================`);
+        console.log(`Failed to send email. Credentials for ${data.email}: ${plainPassword}`);
+        console.log(`=========================================\n`);
+      }
+    } else {
+      console.log(`\n=========================================`);
+      console.log(`SMTP NOT CONFIGURED - Credentials for ${data.email}: ${plainPassword}`);
+      console.log(`=========================================\n`);
+    }
 
     res.status(201).json({ success: true, data: result });
   } catch (error) {

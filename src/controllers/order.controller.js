@@ -43,12 +43,10 @@ exports.getOrders = async (req, res, next) => {
     if (startDate || endDate) {
       whereClause.date = {};
       if (startDate) {
-        whereClause.date.gte = new Date(startDate);
+        whereClause.date.gte = new Date(`${startDate}T00:00:00.000Z`);
       }
       if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        whereClause.date.lte = end;
+        whereClause.date.lte = new Date(`${endDate}T23:59:59.999Z`);
       }
     }
 
@@ -170,6 +168,14 @@ exports.createOrder = async (req, res, next) => {
     const results = await prisma.$transaction(operations);
     const order = results[0];
 
+    const notificationService = require('../services/notification.service');
+    notificationService.sendNotificationToSupplier(
+      parseInt(targetSupplierId),
+      'New Purchase Order',
+      `You have received a new Purchase Order (${poNumber}).`,
+      'NEW_PO'
+    ).catch(err => console.error('Failed to notify supplier of new PO:', err));
+
     res.status(201).json({ success: true, data: order });
   } catch (error) {
     next(error);
@@ -195,7 +201,63 @@ exports.updateOrderStatus = async (req, res, next) => {
       }
     });
 
+    if (isSupplier) {
+      const notificationService = require('../services/notification.service');
+      const supplier = await prisma.supplier.findUnique({ where: { id: req.user.supplier_id } });
+      const supplierName = supplier ? supplier.name : 'A supplier';
+      
+      let title = '';
+      let message = '';
+      
+      if (status === 'ACCEPTED') {
+          title = 'Order Approved';
+          message = `${supplierName} has approved Order #${order.po_number}`;
+      } else if (status === 'REJECTED') {
+          title = 'Order Rejected';
+          message = `${supplierName} has rejected Order #${order.po_number}`;
+      } else if (status === 'DISPATCHED') {
+          title = 'Order Dispatched';
+          message = `${supplierName} has dispatched Order #${order.po_number}`;
+      }
+
+      if (title) {
+          notificationService.sendNotificationToAdmins(
+              title,
+              message,
+              'ORDER_UPDATE'
+          ).catch(err => console.error('Failed to notify admins of order update:', err));
+      }
+    }
+
     res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteOrder = async (req, res, next) => {
+  try {
+    const isSupplier = req.user.role === 'SUPPLIER';
+    const orderId = parseInt(req.params.id);
+
+    const order = await prisma.purchaseOrder.findUnique({
+      where: { id: orderId }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (isSupplier && order.supplier_id !== req.user.supplier_id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this order' });
+    }
+
+    await prisma.purchaseOrder.update({
+      where: { id: orderId },
+      data: { deleted_at: new Date() }
+    });
+
+    res.status(200).json({ success: true, message: 'Order deleted successfully' });
   } catch (error) {
     next(error);
   }

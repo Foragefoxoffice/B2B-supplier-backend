@@ -1,5 +1,5 @@
 const express = require('express');
-const { getOrders, createOrder, updateOrderStatus } = require('../controllers/order.controller');
+const { getOrders, createOrder, updateOrderStatus, deleteOrder } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -12,5 +12,8 @@ router.route('/')
 
 router.route('/:id/status')
   .patch(updateOrderStatus);
+
+router.route('/:id')
+  .delete(deleteOrder);
 
 module.exports = router;

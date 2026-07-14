@@ -47,6 +47,30 @@ const getActivityLogs = async (req, res) => {
   }
 };
 
+const deleteActivityLog = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const log = await prisma.activityLog.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!log) {
+      return res.status(404).json({ success: false, message: 'Activity log not found' });
+    }
+
+    await prisma.activityLog.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({ success: true, message: 'Activity log deleted successfully' });
+  } catch (error) {
+    console.error('Delete Activity Log Error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
-  getActivityLogs
+  getActivityLogs,
+  deleteActivityLog
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const { getOrders, createOrder, updateOrderStatus, deleteOrder } = require('../controllers/order.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
+const uploadDoc = require('../middlewares/uploadDoc');
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.route('/')
   .post(authorize('SUPER_ADMIN', 'ADMIN'), createOrder);
 
 router.route('/:id/status')
-  .patch(updateOrderStatus);
+  .patch(uploadDoc.fields([{ name: 'bookingCopy', maxCount: 1 }, { name: 'invoiceCopy', maxCount: 1 }]), updateOrderStatus);
 
 router.route('/:id')
   .delete(deleteOrder);

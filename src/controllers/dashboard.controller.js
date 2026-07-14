@@ -6,7 +6,7 @@ exports.getStats = async (req, res, next) => {
     const supplierId = req.user.supplier_id;
 
     // Build independent queries based on role
-    const [totalSuppliers, totalProducts, totalOrders, pendingProducts, recentMessages] = await Promise.all([
+    const [totalSuppliers, totalProducts, totalOrders, pendingProducts, pendingOrders, recentMessages] = await Promise.all([
       // Only Superadmin cares about total suppliers
       !isSupplier ? prisma.supplier.count({ where: { deleted_at: null } }) : Promise.resolve(0),
       
@@ -35,6 +35,15 @@ exports.getStats = async (req, res, next) => {
         }
       }),
 
+      // Pending Orders
+      prisma.purchaseOrder.count({
+        where: {
+          deleted_at: null,
+          status: 'SENT',
+          ...(isSupplier && { supplier_id: supplierId }),
+        }
+      }),
+
       // Recent Messages
       prisma.message.findMany({
         take: 4,
@@ -55,6 +64,7 @@ exports.getStats = async (req, res, next) => {
         totalProducts,
         totalOrders,
         pendingProducts,
+        pendingOrders,
         recentMessages
       }
     });

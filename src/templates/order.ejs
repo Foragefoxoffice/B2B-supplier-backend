@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Order PDF</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            font-size: 11px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #2874a6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: auto;
+            margin-right: 15px;
+        }
+
+        .company-details h1 {
+            color: #c0392b;
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .company-details p {
+            margin: 2px 0;
+            color: #555;
+            font-size: 11px;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .header-right h2 {
+            color: #2874a6;
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .header-right p {
+            margin: 3px 0;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .bill-to {
+            background-color: #f8f9f9;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bill-to h3 {
+            color: #2874a6;
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .bill-to h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+
+        .bill-to p {
+            margin: 2px 0;
+        }
+
+        .remarks {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #2874a6;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        td {
+            font-size: 11px;
+            vertical-align: middle;
+        }
+
+        .product-image {
+            max-width: 50px;
+            max-height: 50px;
+            object-fit: cover;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .totals-table {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 10px;
+            text-align: right;
+        }
+
+        .totals-table td:first-child {
+            text-align: left;
+        }
+
+        .total-amount-row {
+            background-color: #f8f9f9;
+            font-weight: bold;
+            color: #2874a6;
+        }
+
+        .terms {
+            font-size: 9px;
+            margin-bottom: 30px;
+        }
+
+        .terms h4 {
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-size: 11px;
+        }
+
+        .terms ol {
+            margin: 0;
+            padding-left: 15px;
+        }
+
+        .terms li {
+            margin-bottom: 3px;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            font-weight: bold;
+        }
+
+        .footer-line {
+            width: 150px;
+            border-top: 1px solid #333;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 11px;
+        }
+
+        .footer-info {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            margin-top: 20px;
+            background-color: #f8f9f9;
+            padding: 5px;
+        }
+
+        .amount-words {
+            color: #2874a6;
+            font-weight: bold;
+            text-align: left !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <% if (logo) { %>
+                <img src="<%= logo %>" class="logo" alt="Logo">
+                <% } %>
+                    <div class="company-details">
+                        <h1>Kannan Silks</h1>
+                        <p>Pure Silk Saree Manufacturer</p>
+                        <p>No.2/40, Raja Veethi Road, Chinthamaniyur,</p>
+                        <p>Omalur (Via), Salem (Dt.) Pin - 636 455.</p>
+                        <p><strong>GSTIN:</strong> 33ABFFK2782B1ZN</p>
+                        <p><strong>Email:</strong> kannansilkshandloom@gmail.com</p>
+                        <p><strong>Phone:</strong> 63839 00539 / 97877 38094</p>
+                    </div>
+        </div>
+        <div class="header-right">
+            <h2>REQUIREMENT ORDER</h2>
+            <p>Order No: <%= order.po_number %>
+            </p>
+            <p>Date: <%= new Date(order.created_at).toLocaleDateString('en-IN') %>
+            </p>
+            <p>Transport: <%= order.transporter ? order.transporter.name : 'N/A' %>
+            </p>
+        </div>
+    </div>
+
+    <div class="bill-to">
+        <h3>BILL TO (BUYER):</h3>
+        <% if (order.buyer) { %>
+            <h4>
+                <%= order.buyer.first_name %>
+                    <%= order.buyer.last_name %>
+            </h4>
+            <% if (order.buyer.phone) { %>
+                <p><strong>Mobile:</strong>
+                    <%= order.buyer.phone %>
+                </p>
+                <% } %>
+                    <% if (order.buyer.email) { %>
+                        <p><strong>Email:</strong>
+                            <%= order.buyer.email %>
+                        </p>
+                        <% } %>
+                            <% } else { %>
+                                <h4>Admin</h4>
+                                <% } %>
+                                    <% if (order.order_given_by) { %>
+                                        <p><strong>Order Given By:</strong>
+                                            <%= order.order_given_by %>
+                                                <%= order.phone_number ? `(Ph: ${order.phone_number})` : '' %>
+                                        </p>
+                                        <% } %>
+    </div>
+
+    <% if (order.remarks) { %>
+        <div class="remarks">
+            Remarks: <span style="font-weight: normal;">
+                <%= order.remarks %>
+            </span>
+        </div>
+        <% } %>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Item Code</th>
+                        <th>Item Name</th>
+                        <th>Color</th>
+                        <th>Rate (Rs)</th>
+                        <th>Qty</th>
+                        <th>Total (Rs)</th>
+                        <th>Image</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% order.items.forEach(function(item, index) { %>
+                        <tr>
+                            <td>
+                                <%= index + 1 %>
+                            </td>
+                            <td>
+                                <%= item.product.product_code %>
+                            </td>
+                            <td>
+                                <%= item.product.name %>
+                            </td>
+                            <td>
+                                <% let color='N/A' ; let imgUrl=null; if (item.variant_id && item.product.images) {
+                                    const v=item.product.images.find(img=> img.id === item.variant_id);
+                                    if (v) {
+                                    color = v.color || 'N/A';
+                                    imgUrl = v.base64 || v.url;
+                                    }
+                                    }
+                                    if (color === 'N/A' && item.product.images && item.product.images.length > 0) {
+                                    const v = item.product.images[0];
+                                    color = v.color || 'N/A';
+                                    if (!imgUrl) imgUrl = v.base64 || v.url;
+                                    }
+                                    %>
+                                    <%= color %>
+                            </td>
+                            <td>
+                                <%= parseFloat(item.rate).toFixed(2) %>
+                            </td>
+                            <td>
+                                <%= item.quantity %>
+                            </td>
+                            <td>
+                                <%= parseFloat(item.amount).toFixed(2) %>
+                            </td>
+                            <td>
+                                <% if (imgUrl) { %>
+                                    <img src="<%= imgUrl %>" class="product-image" alt="Product Image">
+                                    <% } else { %>
+                                        -
+                                        <% } %>
+                            </td>
+                        </tr>
+                        <% }); %>
+                </tbody>
+            </table>
+
+            <table class="totals-table">
+                <tr>
+                    <% const totalQty=order.items.reduce((sum, item)=> sum + item.quantity, 0);
+                        const totalAmount = order.total_amount;
+                        %>
+                        <td>Total Quantity: <%= totalQty %>
+                        </td>
+                        <td>Total Amount (Without GST): Rs. <%= parseFloat(totalAmount).toFixed(2) %>
+                        </td>
+                </tr>
+                <tr>
+                    <td>GST : 0 %</td>
+                    <td>GST VALUE : Rs. 0.00</td>
+                </tr>
+                <tr class="total-amount-row">
+                    <td class="amount-words">Amount in Words: <%= amountInWords(totalAmount) %> Only</td>
+                    <td>Grand Total: Rs. <%= parseFloat(totalAmount).toFixed(2) %>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="terms">
+                <h4>Terms & Conditions</h4>
+                <ol>
+                    <li><strong>Order Confirmation:</strong> All orders are subject to acceptance and confirmation by
+                        the seller.</li>
+                    <li><strong>Price Validity:</strong> Prices displayed on the portal are wholesale prices and may
+                        change without prior notice.</li>
+                    <li><strong>Credit Facility and payment terms:</strong> Credit payment is available only to approved
+                        buyers. Credit limits and payment periods are decided by the seller.</li>
+                    <li><strong>Credit Payment Due Date:</strong> Buyers must make payment within the agreed credit
+                        period. Delayed payments may result in suspension of further orders.</li>
+                    <li><strong>Late Payment Charges:</strong> The seller reserves the right to charge 18% interest or
+                        late fees on overdue payments as permitted by applicable law.</li>
+                    <li><strong>Product Availability:</strong> All products are subject to stock availability. If an
+                        item is unavailable, the buyer will be informed accordingly.</li>
+                    <li><strong>Returns and Claims:</strong> Returns are accepted only for damaged, defective, or
+                        wrongly supplied products. Claims must be raised within 15 days of delivery with supporting
+                        photos.</li>
+                    <li><strong>Shipping and Delivery:</strong> Delivery dates are estimates only. The seller is not
+                        responsible for delays caused by transporters, couriers, or unforeseen circumstances.</li>
+                    <li><strong>Ownership of Goods:</strong> Goods supplied on credit remain the property of the seller
+                        until full payment is received. The seller reserves the right to recover goods in case of
+                        payment default.</li>
+                </ol>
+                <p>Declaration: By placing an order through the portal, the buyer confirms that they have read,
+                    understood, and agreed to these Terms & Conditions.</p>
+            </div>
+
+            <div
+                style="display: flex; justify-content: space-between; margin-bottom: 40px; font-weight: bold; font-size: 11px;">
+                <div>Delivery Date: _________________</div>
+                <div>For KANNAN SILKS</div>
+            </div>
+
+            <div class="footer">
+                <div class="footer-line">Buyer Signature</div>
+                <div class="footer-line">Authorised Signatory</div>
+            </div>
+
+            <div class="footer-info">
+                Reg Office: No.2/40, Raja Veethi Road, Chinthamaniyur, Omalur (Via), Salem (Dt.) Pin - 636 455. |
+                E-Mail: kannansilkshandloom@gmail.com | Phone: 63839 00539 / 97877 38094
+            </div>
+
+</body>
+
+</html>

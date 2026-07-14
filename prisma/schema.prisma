@@ -177,6 +177,9 @@ model PurchaseOrder {
   status        String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, MODIFICATION_REQUESTED, COMPLETED
   total_amount  Decimal   @db.Decimal(12, 2)
   transporter_id Int?
+  tracking_number String?
+  booking_copy_url String?
+  invoice_copy_url String?
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
   deleted_at    DateTime?

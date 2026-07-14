@@ -1,4 +1,10 @@
 const prisma = require('../config/db');
+const ejs = require('ejs');
+const path = require('path');
+const fs = require('fs');
+const numberToWords = require('number-to-words');
+const pdfService = require('../services/pdf.service');
+const emailService = require('../services/email.service');
 
 exports.getOrders = async (req, res, next) => {
   try {
@@ -59,7 +65,7 @@ exports.getOrders = async (req, res, next) => {
         where: whereClause,
         include: {
           supplier: { select: { id: true, name: true, supplier_code: true } },
-          items: { include: { product: { select: { id: true, name: true, product_code: true, unit: true, images: { select: { url: true, color: true, is_primary: true } } } } } }
+          items: { include: { product: { select: { id: true, name: true, product_code: true, unit: true, created_at: true, images: { select: { url: true, color: true, is_primary: true } } } } } }
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -180,6 +186,82 @@ exports.createOrder = async (req, res, next) => {
       'NEW_PO'
     ).catch(err => console.error('Failed to notify supplier of new PO:', err));
 
+    // Generate PDF and send email asynchronously
+    (async () => {
+      try {
+        const fullOrder = await prisma.purchaseOrder.findUnique({
+          where: { id: order.id },
+          include: {
+            supplier: true,
+            transporter: true,
+            items: {
+              include: {
+                product: {
+                  include: {
+                    images: true
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        const buyer = await prisma.user.findUnique({ where: { id: req.user.id } });
+        fullOrder.buyer = buyer;
+
+        let logoBase64 = null;
+        try {
+          const logoPath = path.join(__dirname, '../../../B2B-supplier-frontend/public/images/kannan_silks_logo.png');
+          if (fs.existsSync(logoPath)) {
+            const logoData = fs.readFileSync(logoPath);
+            logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
+          }
+        } catch (e) {
+          console.error("Logo not found", e);
+        }
+
+        const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        
+        // Convert product images to full URLs for Puppeteer
+        if (fullOrder.items) {
+          fullOrder.items.forEach(item => {
+            if (item.product && item.product.images) {
+              item.product.images.forEach(img => {
+                if (img.url && img.url.startsWith('/')) {
+                  img.url = baseUrl + img.url;
+                }
+              });
+            }
+          });
+        }
+
+        const html = await ejs.renderFile(path.join(__dirname, '../templates/order.ejs'), {
+          order: fullOrder,
+          logo: logoBase64,
+          amountInWords: (amount) => numberToWords.toWords(amount).toUpperCase(),
+          baseUrl: baseUrl
+        });
+
+        const pdfBuffer = await pdfService.generatePdf(html);
+
+        const emails = [];
+        if (process.env.SMTP_USER) emails.push(process.env.SMTP_USER);
+        if (fullOrder.supplier && fullOrder.supplier.email) emails.push(fullOrder.supplier.email);
+
+        if (emails.length > 0) {
+          await emailService.sendOrderEmail(
+            emails, 
+            `New Purchase Order: ${fullOrder.po_number}`, 
+            `A new order (${fullOrder.po_number}) has been placed. Please find the attached PDF for details.`, 
+            pdfBuffer, 
+            `${fullOrder.po_number}.pdf`
+          );
+        }
+      } catch (err) {
+        console.error('Failed to generate or send PDF for new PO:', err);
+      }
+    })();
+
     res.status(201).json({ success: true, data: order });
   } catch (error) {
     next(error);
@@ -188,7 +270,7 @@ exports.createOrder = async (req, res, next) => {
 
 exports.updateOrderStatus = async (req, res, next) => {
   try {
-    const { status, remarks } = req.body;
+    const { status, remarks, trackingNumber } = req.body;
     const isSupplier = req.user.role === 'SUPPLIER';
     
     // Determine who can do what.
@@ -197,11 +279,26 @@ exports.updateOrderStatus = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Supplier cannot transition to this status.' });
     }
 
+    let booking_copy_url;
+    let invoice_copy_url;
+    
+    if (req.files) {
+      if (req.files.bookingCopy) {
+        booking_copy_url = `/uploads/${req.files.bookingCopy[0].filename}`;
+      }
+      if (req.files.invoiceCopy) {
+        invoice_copy_url = `/uploads/${req.files.invoiceCopy[0].filename}`;
+      }
+    }
+
     const order = await prisma.purchaseOrder.update({
       where: { id: parseInt(req.params.id) },
       data: {
         status,
-        ...(remarks && { remarks })
+        ...(remarks && { remarks }),
+        ...(trackingNumber && { tracking_number: trackingNumber }),
+        ...(booking_copy_url && { booking_copy_url }),
+        ...(invoice_copy_url && { invoice_copy_url })
       }
     });
 

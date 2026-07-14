@@ -164,10 +164,30 @@ exports.approveProduct = async (req, res, next) => {
 
 exports.deleteProduct = async (req, res, next) => {
   try {
+    const productId = parseInt(req.params.id);
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
     await prisma.product.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id: productId },
       data: { deleted_at: new Date() },
     });
+
+    if (req.user && req.user.role !== 'SUPPLIER' && product.supplier_id) {
+       const notificationService = require('../services/notification.service');
+       const productName = product.name || 'A product';
+       const productCode = product.product_code || '';
+       notificationService.sendNotificationToSupplier(
+           product.supplier_id,
+           'Product Deleted by Admin',
+           `Your product ${productName} (${productCode}) has been deleted by an administrator.`,
+           'PRODUCT_DELETED'
+       ).catch(err => console.error('Failed to notify supplier of product deletion:', err));
+    }
+
     res.status(200).json({ success: true, message: 'Product deleted' });
   } catch (error) {
     next(error);
@@ -329,6 +349,52 @@ exports.updateProduct = async (req, res, next) => {
     }
 
     res.status(200).json({ success: true, data: updatedProduct });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteProductImage = async (req, res, next) => {
+  try {
+    const imageId = parseInt(req.params.imageId);
+    const image = await prisma.productImage.findUnique({ 
+      where: { id: imageId },
+      include: { product: true }
+    });
+    
+    if (!image) {
+      return res.status(404).json({ success: false, message: 'Image not found' });
+    }
+    
+    // Attempt to delete file
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '../../', image.url);
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error('Error deleting image file:', err);
+      }
+    }
+    
+    await prisma.productImage.delete({ where: { id: imageId } });
+
+    // Notify supplier if an admin is deleting the variant
+    if (req.user && req.user.role !== 'SUPPLIER' && image.product && image.product.supplier_id) {
+       const notificationService = require('../services/notification.service');
+       const productName = image.product.name || 'A product';
+       const productCode = image.product.product_code || '';
+       const colorName = image.color || 'Color Variant';
+       notificationService.sendNotificationToSupplier(
+           image.product.supplier_id,
+           'Product Variant Deleted',
+           `A variant (${colorName}) of your product ${productName} (${productCode}) has been deleted by an administrator.`,
+           'PRODUCT_VARIANT_DELETED'
+       ).catch(err => console.error('Failed to notify supplier of product variant deletion:', err));
+    }
+
+    res.status(200).json({ success: true, message: 'Image deleted' });
   } catch (error) {
     next(error);
   }

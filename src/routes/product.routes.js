@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProducts, createProduct, approveProduct, deleteProduct, updateProduct } = require('../controllers/product.controller');
+const { getProducts, createProduct, approveProduct, deleteProduct, updateProduct, deleteProductImage } = require('../controllers/product.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 const upload = require('../middlewares/upload');
 
@@ -14,6 +14,8 @@ router.route('/')
 router.route('/:id')
   .put(authorize('SUPER_ADMIN', 'ADMIN', 'SUPPLIER'), upload.array('images', 5), updateProduct)
   .delete(authorize('SUPER_ADMIN', 'ADMIN', 'SUPPLIER'), deleteProduct);
+
+router.delete('/image/:imageId', authorize('SUPER_ADMIN', 'ADMIN', 'SUPPLIER'), deleteProductImage);
 
 router.patch('/:id/approve', authorize('SUPER_ADMIN', 'ADMIN'), approveProduct);
 

@@ -20,6 +20,20 @@ async function main() {
     });
   }
 
+  // Create Admin Role
+  let adminRole = await prisma.role.findUnique({
+    where: { name: 'ADMIN' }
+  });
+
+  if (!adminRole) {
+    adminRole = await prisma.role.create({
+      data: {
+        name: 'ADMIN',
+        description: 'Administrator role with elevated privileges'
+      }
+    });
+  }
+
   // Create Supplier Role
   let supplierRole = await prisma.role.findUnique({
     where: { name: 'SUPPLIER' }

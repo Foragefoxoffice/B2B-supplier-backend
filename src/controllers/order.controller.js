@@ -172,6 +172,7 @@ exports.createOrder = async (req, res, next) => {
         variant_id: item.variant_id ? parseInt(item.variant_id) : null,
         quantity: qty,
         rate: parseFloat(item.rate),
+        tax_percent: parseFloat(product.gst || 0),
         amount: amount,
         remarks: item.remarks || ''
       });
@@ -283,7 +284,7 @@ exports.createOrder = async (req, res, next) => {
         const html = await ejs.renderFile(path.join(__dirname, '../templates/order.ejs'), {
           order: fullOrder,
           logo: logoBase64,
-          amountInWords: (amount) => numberToWords.toWords(amount).toUpperCase(),
+          amountInWords: (amount) => numberToWords.toWords(Math.round(amount)).toUpperCase(),
           baseUrl: baseUrl
         });
 

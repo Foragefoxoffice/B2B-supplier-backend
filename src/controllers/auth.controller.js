@@ -5,8 +5,9 @@ const nodemailer = require('nodemailer');
 const { createTransporter } = require('../utils/email');
 const { sendNotificationToUser } = require('../services/notification.service');
 
-const generateToken = (id, role, supplier_id) => {
-  return jwt.sign({ id, role, supplier_id }, process.env.JWT_SECRET, {
+const generateToken = (id, role, supplier_id, password) => {
+  const passwordSig = password ? password.substring(0, 10) : '';
+  return jwt.sign({ id, role, supplier_id, passwordSig }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
@@ -37,7 +38,7 @@ exports.login = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Account is not active' });
     }
 
-    const token = generateToken(user.id, user.role.name, user.supplier_id);
+    const token = generateToken(user.id, user.role.name, user.supplier_id, user.password);
 
     await prisma.activityLog.create({
       data: {

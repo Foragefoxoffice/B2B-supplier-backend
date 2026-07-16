@@ -328,22 +328,37 @@
             </table>
 
             <table class="totals-table">
+                <% 
+                const totalQty = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                const subtotal = parseFloat(order.total_amount);
+                
+                let totalGstAmount = 0;
+                order.items.forEach(item => {
+                    const itemAmount = parseFloat(item.amount);
+                    const taxPercent = parseFloat(item.tax_percent || (item.product && item.product.gst) || 0);
+                    const itemGst = itemAmount * (taxPercent / 100);
+                    totalGstAmount += itemGst;
+                });
+                
+                const grandTotal = subtotal + totalGstAmount;
+                
+                // Find unique non-zero GST rates
+                const uniqueGstRates = [...new Set(order.items.map(item => parseFloat(item.tax_percent || (item.product && item.product.gst) || 0)))].filter(rate => rate > 0);
+                const gstLabel = uniqueGstRates.length > 0 ? `GST : ${uniqueGstRates.join(', ')} %` : 'GST : 0 %';
+                %>
                 <tr>
-                    <% const totalQty=order.items.reduce((sum, item)=> sum + item.quantity, 0);
-                        const totalAmount = order.total_amount;
-                        %>
                         <td>Total Quantity: <%= totalQty %>
                         </td>
-                        <td>Total Amount (Without GST): Rs. <%= parseFloat(totalAmount).toFixed(2) %>
+                        <td>Total Amount (Without GST): Rs. <%= subtotal.toFixed(2) %>
                         </td>
                 </tr>
                 <tr>
-                    <td>GST : 0 %</td>
-                    <td>GST VALUE : Rs. 0.00</td>
+                    <td><%= gstLabel %></td>
+                    <td>GST VALUE : Rs. <%= totalGstAmount.toFixed(2) %></td>
                 </tr>
                 <tr class="total-amount-row">
-                    <td class="amount-words">Amount in Words: <%= amountInWords(totalAmount) %> Only</td>
-                    <td>Grand Total: Rs. <%= parseFloat(totalAmount).toFixed(2) %>
+                    <td class="amount-words">Amount in Words: <%= amountInWords(grandTotal) %> Only</td>
+                    <td>Grand Total: Rs. <%= grandTotal.toFixed(2) %>
                     </td>
                 </tr>
             </table>

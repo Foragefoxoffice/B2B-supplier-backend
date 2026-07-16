@@ -79,8 +79,46 @@ exports.getOrders = async (req, res, next) => {
         deleted_at: null,
         ...(isSupplier && { supplier_id: supplierId }),
       },
-      select: { status: true }
+      select: { status: true, date: true }
     });
+
+    const calculateTrend = (data, filterFn = () => true) => {
+      if (!data || data.length === 0) return { trend: 'up', value: '0%' };
+      const validDates = data.map(item => new Date(item.date).getTime()).filter(t => !isNaN(t));
+      if (validDates.length === 0) return { trend: 'up', value: '0%' };
+      
+      const latestDate = new Date(Math.max(...validDates));
+      const now = latestDate;
+      const oneWeekAgo = new Date(now);
+      oneWeekAgo.setDate(now.getDate() - 7);
+      
+      const twoWeeksAgo = new Date(oneWeekAgo);
+      twoWeeksAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      let thisWeekCount = 0; let lastWeekCount = 0;
+      data.forEach(item => {
+        if (!filterFn(item)) return;
+        const itemDate = new Date(item.date);
+        if (isNaN(itemDate.getTime())) return;
+        
+        if (itemDate > oneWeekAgo && itemDate <= now) {
+          thisWeekCount++;
+        } else if (itemDate > twoWeeksAgo && itemDate <= oneWeekAgo) {
+          lastWeekCount++;
+        }
+      });
+      
+      if (lastWeekCount === 0) {
+        if (thisWeekCount === 0) return { trend: 'up', value: '0%' };
+        return { trend: 'up', value: '100%' };
+      }
+      
+      const percentageChange = ((thisWeekCount - lastWeekCount) / lastWeekCount) * 100;
+      return {
+        trend: percentageChange >= 0 ? 'up' : 'down',
+        value: `${Math.abs(percentageChange).toFixed(1)}%`
+      };
+    };
 
     const stats = {
       total: allOrdersStats.length,
@@ -88,6 +126,13 @@ exports.getOrders = async (req, res, next) => {
       shipped: allOrdersStats.filter(o => o.status === 'DISPATCHED').length,
       delivered: allOrdersStats.filter(o => o.status === 'COMPLETED').length,
       cancelled: allOrdersStats.filter(o => o.status === 'REJECTED').length,
+      trends: {
+        total: calculateTrend(allOrdersStats),
+        inProgress: calculateTrend(allOrdersStats, o => ['SENT', 'ACCEPTED'].includes(o.status)),
+        shipped: calculateTrend(allOrdersStats, o => o.status === 'DISPATCHED'),
+        delivered: calculateTrend(allOrdersStats, o => o.status === 'COMPLETED'),
+        cancelled: calculateTrend(allOrdersStats, o => o.status === 'REJECTED')
+      }
     };
 
     res.status(200).json({ success: true, data: orders, total, page, limit, stats });

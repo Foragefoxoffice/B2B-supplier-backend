@@ -10,6 +10,7 @@ router.post('/fcm-token', notificationController.saveFcmToken);
 router.get('/', notificationController.getNotifications);
 router.put('/read-all', notificationController.markAllAsRead);
 router.put('/:id/read', notificationController.markAsRead);
+router.delete('/delete-all', notificationController.deleteAllNotifications);
 router.delete('/:id', notificationController.deleteNotification);
 
 module.exports = router;

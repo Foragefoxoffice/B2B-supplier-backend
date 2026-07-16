@@ -30,6 +30,9 @@ exports.getSuppliers = async (req, res, next) => {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
+    
+    const startOfLastMonth = new Date(startOfMonth);
+    startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
 
     const [
       suppliers, 
@@ -37,7 +40,12 @@ exports.getSuppliers = async (req, res, next) => {
       totalSuppliersCount,
       activeSuppliersCount,
       newThisMonthCount,
-      purchaseAgg
+      newLastMonthCount,
+      activeThisMonthCount,
+      activeLastMonthCount,
+      purchaseAgg,
+      purchaseAggThisMonth,
+      purchaseAggLastMonth
     ] = await Promise.all([
       prisma.supplier.findMany({
         where,
@@ -49,13 +57,43 @@ exports.getSuppliers = async (req, res, next) => {
       prisma.supplier.count({ where: { deleted_at: null } }),
       prisma.supplier.count({ where: { deleted_at: null, status: 'ACTIVE' } }),
       prisma.supplier.count({ where: { deleted_at: null, created_at: { gte: startOfMonth } } }),
+      prisma.supplier.count({ where: { deleted_at: null, created_at: { gte: startOfLastMonth, lt: startOfMonth } } }),
+      prisma.supplier.count({ where: { deleted_at: null, status: 'ACTIVE', created_at: { gte: startOfMonth } } }),
+      prisma.supplier.count({ where: { deleted_at: null, status: 'ACTIVE', created_at: { gte: startOfLastMonth, lt: startOfMonth } } }),
       prisma.purchaseOrder.aggregate({
         _sum: { total_amount: true },
         where: { deleted_at: null }
+      }),
+      prisma.purchaseOrder.aggregate({
+        _sum: { total_amount: true },
+        where: { deleted_at: null, created_at: { gte: startOfMonth } }
+      }),
+      prisma.purchaseOrder.aggregate({
+        _sum: { total_amount: true },
+        where: { deleted_at: null, created_at: { gte: startOfLastMonth, lt: startOfMonth } }
       })
     ]);
 
     const totalPurchaseAmount = purchaseAgg._sum.total_amount ? Number(purchaseAgg._sum.total_amount) : 0;
+    
+    const calculatePercentageChange = (current, previous) => {
+      if (previous === 0) return current === 0 ? { trend: 'up', value: '0%' } : { trend: 'up', value: '100%' };
+      const change = ((current - previous) / previous) * 100;
+      return {
+        trend: change >= 0 ? 'up' : 'down',
+        value: `${Math.abs(change).toFixed(1)}%`
+      };
+    };
+
+    const trends = {
+      totalSuppliers: calculatePercentageChange(newThisMonthCount, newLastMonthCount),
+      activeSuppliers: calculatePercentageChange(activeThisMonthCount, activeLastMonthCount),
+      newThisMonth: calculatePercentageChange(newThisMonthCount, newLastMonthCount),
+      totalPurchase: calculatePercentageChange(
+         purchaseAggThisMonth._sum.total_amount ? Number(purchaseAggThisMonth._sum.total_amount) : 0,
+         purchaseAggLastMonth._sum.total_amount ? Number(purchaseAggLastMonth._sum.total_amount) : 0
+      )
+    };
 
     res.status(200).json({
       success: true,
@@ -70,7 +108,8 @@ exports.getSuppliers = async (req, res, next) => {
         totalSuppliers: totalSuppliersCount,
         activeSuppliers: activeSuppliersCount,
         newThisMonth: newThisMonthCount,
-        totalPurchase: totalPurchaseAmount
+        totalPurchase: totalPurchaseAmount,
+        trends
       },
       data: suppliers,
     });

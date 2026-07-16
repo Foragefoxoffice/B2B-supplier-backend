@@ -89,3 +89,17 @@ exports.deleteNotification = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.deleteAllNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    await prisma.notification.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};

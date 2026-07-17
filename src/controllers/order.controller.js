@@ -278,7 +278,7 @@ exports.createOrder = async (req, res, next) => {
           console.error("Logo not found", e);
         }
 
-        const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
         
         // Convert product images to full URLs for Puppeteer
         if (fullOrder.items) {
@@ -433,7 +433,7 @@ exports.updateOrderStatus = async (req, res, next) => {
             }
           });
 
-          const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+          const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
           
           const html = await require('ejs').renderFile(
             require('path').join(__dirname, '../templates/delivery.ejs'), 
@@ -550,7 +550,7 @@ exports.downloadOrderPdf = async (req, res, next) => {
       console.error("Logo not found", e);
     }
 
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
     
     if (fullOrder.items) {
       fullOrder.items.forEach(item => {
@@ -629,7 +629,7 @@ exports.viewOrderHtml = async (req, res, next) => {
       console.error("Logo not found", e);
     }
 
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
     
     if (fullOrder.items) {
       fullOrder.items.forEach(item => {

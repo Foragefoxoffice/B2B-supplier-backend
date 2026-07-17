@@ -316,6 +316,7 @@ exports.createOrder = async (req, res, next) => {
             pdfBuffer,
             `${fullOrder.po_number}.pdf`
           );
+          console.log(`Order form email sent to:`, emails);
         }
       } catch (err) {
         console.error('Failed to generate or send PDF for new PO:', err);

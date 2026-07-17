@@ -304,7 +304,6 @@ exports.createOrder = async (req, res, next) => {
         const pdfBuffer = await pdfService.generatePdf(html);
 
         const emails = [];
-        if (process.env.SMTP_USER) emails.push(process.env.SMTP_USER);
         if (fullOrder.supplier && fullOrder.supplier.email) emails.push(fullOrder.supplier.email);
         if (buyer && buyer.email && !emails.includes(buyer.email)) emails.push(buyer.email);
 

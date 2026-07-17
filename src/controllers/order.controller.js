@@ -64,7 +64,7 @@ exports.getOrders = async (req, res, next) => {
       prisma.purchaseOrder.findMany({
         where: whereClause,
         include: {
-          supplier: { select: { id: true, name: true, supplier_code: true } },
+          supplier: { select: { id: true, name: true, supplier_code: true, email: true, phone: true, address: true, city: true, state: true, gst: true } },
           items: { include: { product: { select: { id: true, name: true, product_code: true, unit: true, created_at: true, images: { select: { url: true, color: true, is_primary: true } } } } } }
         },
         orderBy: { created_at: 'desc' },

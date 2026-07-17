@@ -280,12 +280,26 @@ exports.createOrder = async (req, res, next) => {
 
         const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
         
-        // Convert product images to full URLs for Puppeteer
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Convert product images to base64 for Puppeteer
         if (fullOrder.items) {
           fullOrder.items.forEach(item => {
             if (item.product && item.product.images) {
               item.product.images.forEach(img => {
                 if (img.url && img.url.startsWith('/')) {
+                  try {
+                    const filePath = path.join(__dirname, '../..', img.url);
+                    if (fs.existsSync(filePath)) {
+                      const fileData = fs.readFileSync(filePath);
+                      let ext = path.extname(filePath).substring(1).toLowerCase();
+                      if (ext === 'jpg') ext = 'jpeg';
+                      img.base64 = `data:image/${ext || 'jpeg'};base64,${fileData.toString('base64')}`;
+                    }
+                  } catch (err) {
+                    console.error("Error converting image to base64 for PDF:", err);
+                  }
                   img.url = baseUrl + img.url;
                 }
               });
@@ -435,6 +449,33 @@ exports.updateOrderStatus = async (req, res, next) => {
 
           const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
           
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Convert product images to base64 for email
+          if (fullOrder.items) {
+            fullOrder.items.forEach(item => {
+              if (item.product && item.product.images) {
+                item.product.images.forEach(img => {
+                  if (img.url && img.url.startsWith('/')) {
+                    try {
+                      const filePath = path.join(__dirname, '../..', img.url);
+                      if (fs.existsSync(filePath)) {
+                        const fileData = fs.readFileSync(filePath);
+                        let ext = path.extname(filePath).substring(1).toLowerCase();
+                        if (ext === 'jpg') ext = 'jpeg';
+                        img.base64 = `data:image/${ext || 'jpeg'};base64,${fileData.toString('base64')}`;
+                      }
+                    } catch (err) {
+                      console.error("Error converting image to base64:", err);
+                    }
+                    img.url = baseUrl + img.url;
+                  }
+                });
+              }
+            });
+          }
+
           const html = await require('ejs').renderFile(
             require('path').join(__dirname, '../templates/delivery.ejs'), 
             { order: fullOrder, baseUrl }
@@ -552,11 +593,23 @@ exports.downloadOrderPdf = async (req, res, next) => {
 
     const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
     
+    const fs = require('fs');
     if (fullOrder.items) {
       fullOrder.items.forEach(item => {
         if (item.product && item.product.images) {
           item.product.images.forEach(img => {
             if (img.url && img.url.startsWith('/')) {
+              try {
+                const filePath = path.join(__dirname, '../..', img.url);
+                if (fs.existsSync(filePath)) {
+                  const fileData = fs.readFileSync(filePath);
+                  let ext = path.extname(filePath).substring(1).toLowerCase();
+                  if (ext === 'jpg') ext = 'jpeg';
+                  img.base64 = `data:image/${ext || 'jpeg'};base64,${fileData.toString('base64')}`;
+                }
+              } catch (err) {
+                console.error("Error converting image to base64 for PDF:", err);
+              }
               img.url = baseUrl + img.url;
             }
           });
@@ -631,11 +684,23 @@ exports.viewOrderHtml = async (req, res, next) => {
 
     const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
     
+    const fs = require('fs');
     if (fullOrder.items) {
       fullOrder.items.forEach(item => {
         if (item.product && item.product.images) {
           item.product.images.forEach(img => {
             if (img.url && img.url.startsWith('/')) {
+              try {
+                const filePath = path.join(__dirname, '../..', img.url);
+                if (fs.existsSync(filePath)) {
+                  const fileData = fs.readFileSync(filePath);
+                  let ext = path.extname(filePath).substring(1).toLowerCase();
+                  if (ext === 'jpg') ext = 'jpeg';
+                  img.base64 = `data:image/${ext || 'jpeg'};base64,${fileData.toString('base64')}`;
+                }
+              } catch (err) {
+                console.error("Error converting image to base64 for HTML view:", err);
+              }
               img.url = baseUrl + img.url;
             }
           });

@@ -10,7 +10,7 @@ exports.getOrders = async (req, res, next) => {
   try {
     const isSupplier = req.user.role === 'SUPPLIER';
     const supplierId = req.user.supplier_id;
-    
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || '';
@@ -86,33 +86,33 @@ exports.getOrders = async (req, res, next) => {
       if (!data || data.length === 0) return { trend: 'up', value: '0%' };
       const validDates = data.map(item => new Date(item.date).getTime()).filter(t => !isNaN(t));
       if (validDates.length === 0) return { trend: 'up', value: '0%' };
-      
+
       const latestDate = new Date(Math.max(...validDates));
       const now = latestDate;
       const oneWeekAgo = new Date(now);
       oneWeekAgo.setDate(now.getDate() - 7);
-      
+
       const twoWeeksAgo = new Date(oneWeekAgo);
       twoWeeksAgo.setDate(oneWeekAgo.getDate() - 7);
-      
+
       let thisWeekCount = 0; let lastWeekCount = 0;
       data.forEach(item => {
         if (!filterFn(item)) return;
         const itemDate = new Date(item.date);
         if (isNaN(itemDate.getTime())) return;
-        
+
         if (itemDate > oneWeekAgo && itemDate <= now) {
           thisWeekCount++;
         } else if (itemDate > twoWeeksAgo && itemDate <= oneWeekAgo) {
           lastWeekCount++;
         }
       });
-      
+
       if (lastWeekCount === 0) {
         if (thisWeekCount === 0) return { trend: 'up', value: '0%' };
         return { trend: 'up', value: '100%' };
       }
-      
+
       const percentageChange = ((thisWeekCount - lastWeekCount) / lastWeekCount) * 100;
       return {
         trend: percentageChange >= 0 ? 'up' : 'down',
@@ -144,7 +144,7 @@ exports.getOrders = async (req, res, next) => {
 exports.createOrder = async (req, res, next) => {
   try {
     let { supplier_id, transporter_id, items, order_given_by, phone_number, remarks } = req.body;
-    
+
     // Parse items if they come as a JSON string from FormData
     if (typeof items === 'string') {
       try {
@@ -164,18 +164,18 @@ exports.createOrder = async (req, res, next) => {
 
     let totalAmount = 0;
     const itemsData = [];
-    
+
     // Validate stock and prepare items data
     for (const item of orderItems) {
       const product = await prisma.product.findUnique({ where: { id: parseInt(item.product_id) } });
       if (!product) return res.status(404).json({ success: false, message: `Product ${item.product_id} not found` });
-      
+
       const qty = parseInt(item.quantity);
       if (product.stock < qty) return res.status(400).json({ success: false, message: `Insufficient stock for product ${product.name}` });
-      
+
       const amount = parseFloat(item.rate) * qty;
       totalAmount += amount;
-      
+
       itemsData.push({
         product_id: product.id,
         variant_id: item.variant_id ? parseInt(item.variant_id) : null,
@@ -244,6 +244,8 @@ exports.createOrder = async (req, res, next) => {
       'NEW_PO'
     ).catch(err => console.error('Failed to notify supplier of new PO:', err));
 
+    const buyer = await prisma.user.findUnique({ where: { id: req.user.id } });
+
     // Generate PDF and send email asynchronously
     (async () => {
       try {
@@ -264,7 +266,6 @@ exports.createOrder = async (req, res, next) => {
           }
         });
 
-        const buyer = await prisma.user.findUnique({ where: { id: req.user.id } });
         fullOrder.buyer = buyer;
 
         let logoBase64 = null;
@@ -279,7 +280,7 @@ exports.createOrder = async (req, res, next) => {
         }
 
         const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
-        
+
         // Convert product images to full URLs for Puppeteer
         if (fullOrder.items) {
           fullOrder.items.forEach(item => {
@@ -309,10 +310,10 @@ exports.createOrder = async (req, res, next) => {
 
         if (emails.length > 0) {
           await emailService.sendOrderEmail(
-            emails, 
-            `New Purchase Order: ${fullOrder.po_number}`, 
-            `A new order (${fullOrder.po_number}) has been placed. Please find the attached PDF for details.`, 
-            pdfBuffer, 
+            emails,
+            `New Purchase Order: ${fullOrder.po_number}`,
+            `A new order (${fullOrder.po_number}) has been placed. Please find the attached PDF for details.`,
+            pdfBuffer,
             `${fullOrder.po_number}.pdf`
           );
         }
@@ -331,7 +332,7 @@ exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { status, remarks, trackingNumber } = req.body;
     const isSupplier = req.user.role === 'SUPPLIER';
-    
+
     // Determine who can do what.
     const allowedSupplierStatuses = ['ACCEPTED', 'REJECTED', 'DISPATCHED', 'COMPLETED'];
     if (isSupplier && !allowedSupplierStatuses.includes(status)) {
@@ -340,7 +341,7 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     let booking_copy_url;
     let invoice_copy_url;
-    
+
     if (req.files) {
       if (req.files.bookingCopy) {
         booking_copy_url = `/uploads/${req.files.bookingCopy[0].filename}`;
@@ -375,42 +376,42 @@ exports.updateOrderStatus = async (req, res, next) => {
     }
 
     if (status === 'ACCEPTED') {
-        title = 'Order Approved';
-        message = `${updaterName} has approved Order #${order.po_number}`;
+      title = 'Order Approved';
+      message = `${updaterName} has approved Order #${order.po_number}`;
     } else if (status === 'REJECTED') {
-        title = 'Order Rejected';
-        message = `${updaterName} has rejected Order #${order.po_number}`;
+      title = 'Order Rejected';
+      message = `${updaterName} has rejected Order #${order.po_number}`;
     } else if (status === 'DISPATCHED') {
-        title = 'Order Dispatched';
-        message = `${updaterName} has dispatched Order #${order.po_number}`;
+      title = 'Order Dispatched';
+      message = `${updaterName} has dispatched Order #${order.po_number}`;
     } else if (status === 'COMPLETED') {
-        title = 'Order Delivered';
-        message = `${updaterName} has marked Order #${order.po_number} as delivered`;
+      title = 'Order Delivered';
+      message = `${updaterName} has marked Order #${order.po_number} as delivered`;
     }
 
     if (title) {
-        if (isSupplier) {
-            // Supplier updated it -> Notify admins
-            notificationService.sendNotificationToAdmins(
-                title,
-                message,
-                'ORDER_UPDATE'
-            ).catch(err => console.error('Failed to notify admins of order update:', err));
-        } else {
-            // Admin updated it -> Notify supplier and other admins
-            notificationService.sendNotificationToSupplier(
-                order.supplier_id,
-                title,
-                message,
-                'ORDER_UPDATE'
-            ).catch(err => console.error('Failed to notify supplier of order update:', err));
-            
-            notificationService.sendNotificationToAdmins(
-                title,
-                message,
-                'ORDER_UPDATE'
-            ).catch(err => console.error('Failed to notify admins of order update:', err));
-        }
+      if (isSupplier) {
+        // Supplier updated it -> Notify admins
+        notificationService.sendNotificationToAdmins(
+          title,
+          message,
+          'ORDER_UPDATE'
+        ).catch(err => console.error('Failed to notify admins of order update:', err));
+      } else {
+        // Admin updated it -> Notify supplier and other admins
+        notificationService.sendNotificationToSupplier(
+          order.supplier_id,
+          title,
+          message,
+          'ORDER_UPDATE'
+        ).catch(err => console.error('Failed to notify supplier of order update:', err));
+
+        notificationService.sendNotificationToAdmins(
+          title,
+          message,
+          'ORDER_UPDATE'
+        ).catch(err => console.error('Failed to notify admins of order update:', err));
+      }
     }
 
     if (status === 'COMPLETED') {
@@ -434,9 +435,9 @@ exports.updateOrderStatus = async (req, res, next) => {
           });
 
           const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
-          
+
           const html = await require('ejs').renderFile(
-            require('path').join(__dirname, '../templates/delivery.ejs'), 
+            require('path').join(__dirname, '../templates/delivery.ejs'),
             { order: fullOrder, baseUrl }
           );
 
@@ -452,7 +453,7 @@ exports.updateOrderStatus = async (req, res, next) => {
               status: 'ACTIVE'
             }
           });
-          
+
           admins.forEach(admin => {
             if (admin.email && !emails.includes(admin.email)) {
               emails.push(admin.email);
@@ -551,7 +552,7 @@ exports.downloadOrderPdf = async (req, res, next) => {
     }
 
     const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
-    
+
     if (fullOrder.items) {
       fullOrder.items.forEach(item => {
         if (item.product && item.product.images) {
@@ -630,7 +631,7 @@ exports.viewOrderHtml = async (req, res, next) => {
     }
 
     const baseUrl = process.env.BASE_URL || `https://kannansilkssupplierb2b.com`;
-    
+
     if (fullOrder.items) {
       fullOrder.items.forEach(item => {
         if (item.product && item.product.images) {

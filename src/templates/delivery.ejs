@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Order Delivered</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f4f7f6;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .header {
+      background-color: #059669; /* Emerald 600 */
+      padding: 30px 20px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+    .header p {
+      margin: 10px 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 30px;
+    }
+    .order-meta {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eeeeee;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+    .meta-box {
+      width: 48%;
+    }
+    .meta-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #777;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    .meta-value {
+      font-size: 15px;
+      font-weight: bold;
+      color: #222;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #111;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #059669;
+      display: inline-block;
+      padding-bottom: 5px;
+    }
+    .product-list {
+      margin-top: 20px;
+    }
+    .product-card {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      border: 1px solid #eaeaea;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      background-color: #fafafa;
+    }
+    .product-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      background-color: #eee;
+    }
+    .product-details {
+      margin-left: 15px;
+      flex: 1;
+    }
+    .product-name {
+      font-size: 15px;
+      font-weight: bold;
+      color: #222;
+      margin: 0 0 5px;
+    }
+    .product-meta {
+      font-size: 12px;
+      color: #666;
+      margin: 0 0 8px;
+    }
+    .product-price {
+      font-size: 14px;
+      font-weight: bold;
+      color: #059669;
+    }
+    .totals {
+      margin-top: 30px;
+      border-top: 2px dashed #eee;
+      padding-top: 20px;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .totals-row.grand-total {
+      font-size: 18px;
+      font-weight: bold;
+      color: #111;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+      margin-top: 10px;
+    }
+    .delivery-details {
+      margin-top: 30px;
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .delivery-details h3 {
+      margin: 0 0 10px;
+      color: #166534;
+      font-size: 16px;
+    }
+    .delivery-details p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #15803d;
+    }
+    .footer {
+      background-color: #1e293b;
+      padding: 20px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Order Delivered!</h1>
+      <p>Your order <%= order.po_number %> has been successfully delivered.</p>
+    </div>
+    
+    <div class="content">
+      <div class="order-meta">
+        <div class="meta-box">
+          <div class="meta-label">Supplier</div>
+          <div class="meta-value"><%= order.supplier ? order.supplier.name : 'N/A' %></div>
+        </div>
+        <div class="meta-box" style="text-align: right;">
+          <div class="meta-label">Order Date</div>
+          <div class="meta-value"><%= new Date(order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %></div>
+        </div>
+      </div>
+
+      <% if (order.tracking_number || order.remarks) { %>
+        <div class="delivery-details">
+          <h3>Delivery Information</h3>
+          <% if (order.tracking_number) { %>
+            <p><strong>Tracking Number:</strong> <%= order.tracking_number %></p>
+          <% } %>
+          <% if (order.remarks) { %>
+            <p><strong>Remarks:</strong> <%= order.remarks %></p>
+          <% } %>
+        </div>
+      <% } %>
+
+      <div class="section-title" style="margin-top: 30px;">Delivered Products</div>
+      
+      <div class="product-list">
+        <% 
+        let totalQty = 0;
+        let subtotal = 0;
+        order.items.forEach(function(item) { 
+          totalQty += item.quantity;
+          subtotal += parseFloat(item.amount);
+          
+          let color = 'N/A';
+          let imgUrl = null;
+          if (item.variant_id && item.product.images) {
+            const v = item.product.images.find(img => img.id === item.variant_id);
+            if (v) {
+              color = v.color || 'N/A';
+              imgUrl = v.url;
+            }
+          }
+          if (color === 'N/A' && item.product.images && item.product.images.length > 0) {
+            const v = item.product.images[0];
+            color = v.color || 'N/A';
+            if (!imgUrl) imgUrl = v.url;
+          }
+          if (imgUrl && imgUrl.startsWith('/')) {
+            imgUrl = baseUrl + imgUrl;
+          }
+        %>
+          <div class="product-card">
+            <% if (imgUrl) { %>
+              <img src="<%= imgUrl %>" alt="<%= item.product.name %>" class="product-image" />
+            <% } else { %>
+              <div class="product-image" style="display:flex; align-items:center; justify-content:center; color:#999; font-size:10px;">No Image</div>
+            <% } %>
+            <div class="product-details">
+              <h4 class="product-name"><%= item.product.name %></h4>
+              <p class="product-meta">Code: <%= item.product.product_code %> | Color: <%= color %></p>
+              <p class="product-price"><%= item.quantity %> <%= item.product.unit || 'pcs' %> &times; Rs. <%= parseFloat(item.rate).toFixed(2) %></p>
+            </div>
+            <div style="font-weight: bold; color: #111;">
+              Rs. <%= parseFloat(item.amount).toFixed(2) %>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <div class="totals">
+        <div class="totals-row">
+          <span>Total Items / Quantity</span>
+          <span><%= order.items.length %> / <%= totalQty %></span>
+        </div>
+        <div class="totals-row">
+          <span>Total Amount (Without GST)</span>
+          <span>Rs. <%= subtotal.toFixed(2) %></span>
+        </div>
+        <%
+          let totalGstAmount = 0;
+          order.items.forEach(item => {
+            const itemAmount = parseFloat(item.amount);
+            const taxPercent = parseFloat(item.tax_percent || (item.product && item.product.gst) || 0);
+            totalGstAmount += itemAmount * (taxPercent / 100);
+          });
+          const grandTotal = subtotal + totalGstAmount;
+        %>
+        <% if (totalGstAmount > 0) { %>
+        <div class="totals-row">
+          <span>Total GST</span>
+          <span>Rs. <%= totalGstAmount.toFixed(2) %></span>
+        </div>
+        <% } %>
+        <div class="totals-row grand-total">
+          <span>Grand Total</span>
+          <span>Rs. <%= grandTotal.toFixed(2) %></span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      This is an automated message from the Kannan Silks Supplier Portal. Please do not reply directly to this email.<br/>
+      Kannan Silks, Salem.
+    </div>
+  </div>
+</body>
+</html>

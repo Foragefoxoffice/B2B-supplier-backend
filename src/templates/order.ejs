@@ -230,31 +230,34 @@
     </div>
 
     <div class="bill-to">
-        <h3>BILL TO (BUYER):</h3>
-        <% if (order.buyer) { %>
-            <h4>
-                <%= order.buyer.first_name %>
-                    <%= order.buyer.last_name %>
-            </h4>
-            <% if (order.buyer.phone) { %>
-                <p><strong>Mobile:</strong>
-                    <%= order.buyer.phone %>
-                </p>
-                <% } %>
-                    <% if (order.buyer.email) { %>
-                        <p><strong>Email:</strong>
-                            <%= order.buyer.email %>
-                        </p>
-                        <% } %>
-                            <% } else { %>
-                                <h4>Admin</h4>
-                                <% } %>
-                                    <% if (order.order_given_by) { %>
-                                        <p><strong>Order Given By:</strong>
-                                            <%= order.order_given_by %>
-                                                <%= order.phone_number ? `(Ph: ${order.phone_number})` : '' %>
-                                        </p>
-                                        <% } %>
+        <h3>SUPPLIER DETAILS:</h3>
+        <% if (order.supplier) { %>
+            <h4><%= order.supplier.name %></h4>
+            <% if (order.supplier.address || order.supplier.city || order.supplier.state) { %>
+                <p><%= order.supplier.address ? order.supplier.address + ', ' : '' %><%= order.supplier.city ? order.supplier.city + ', ' : '' %><%= order.supplier.state ? order.supplier.state : '' %><%= order.supplier.pincode ? ' - ' + order.supplier.pincode : '' %></p>
+            <% } %>
+            <% if (order.supplier.phone) { %>
+                <p><strong>Phone:</strong> <%= order.supplier.phone %></p>
+            <% } %>
+            <% if (order.supplier.email) { %>
+                <p><strong>Email:</strong> <%= order.supplier.email %></p>
+            <% } %>
+            <% if (order.supplier.gst) { %>
+                <p><strong>GSTIN:</strong> <%= order.supplier.gst %></p>
+            <% } %>
+        <% } %>
+
+        <% if (order.order_given_by) { %>
+            <p style="margin-top: 10px;"><strong>Order Given By:</strong>
+                <%= order.order_given_by %>
+                <%= order.phone_number ? `(Ph: ${order.phone_number})` : '' %>
+            </p>
+        <% } else if (order.buyer) { %>
+            <p style="margin-top: 10px;"><strong>Order Given By:</strong>
+                <%= order.buyer.first_name %> <%= order.buyer.last_name %>
+                <%= order.buyer.phone ? `(Ph: ${order.buyer.phone})` : '' %>
+            </p>
+        <% } %>
     </div>
 
     <% if (order.remarks) { %>
@@ -366,29 +369,14 @@
             <div class="terms">
                 <h4>Terms & Conditions</h4>
                 <ol>
-                    <li><strong>Order Confirmation:</strong> All orders are subject to acceptance and confirmation by
-                        the seller.</li>
-                    <li><strong>Price Validity:</strong> Prices displayed on the portal are wholesale prices and may
-                        change without prior notice.</li>
-                    <li><strong>Credit Facility and payment terms:</strong> Credit payment is available only to approved
-                        buyers. Credit limits and payment periods are decided by the seller.</li>
-                    <li><strong>Credit Payment Due Date:</strong> Buyers must make payment within the agreed credit
-                        period. Delayed payments may result in suspension of further orders.</li>
-                    <li><strong>Late Payment Charges:</strong> The seller reserves the right to charge 18% interest or
-                        late fees on overdue payments as permitted by applicable law.</li>
-                    <li><strong>Product Availability:</strong> All products are subject to stock availability. If an
-                        item is unavailable, the buyer will be informed accordingly.</li>
-                    <li><strong>Returns and Claims:</strong> Returns are accepted only for damaged, defective, or
-                        wrongly supplied products. Claims must be raised within 15 days of delivery with supporting
-                        photos.</li>
-                    <li><strong>Shipping and Delivery:</strong> Delivery dates are estimates only. The seller is not
-                        responsible for delays caused by transporters, couriers, or unforeseen circumstances.</li>
-                    <li><strong>Ownership of Goods:</strong> Goods supplied on credit remain the property of the seller
-                        until full payment is received. The seller reserves the right to recover goods in case of
-                        payment default.</li>
+                    <li>Upload only high-quality design photos captured using a high-megapixel camera or a high-resolution smartphone.</li>
+                    <li>Goods should be delivered as per our Order Form. Substandard goods will be summarily rejected. No freight will be paid for returned goods.</li>
+                    <li>Goods must be delivered on or before the due date. If the goods or services are not received from the supplier, within a week after the due date, the company at its sole discretion cancel the P.O without assigning any reason whatsoever.</li>
+                    <li>GST Number must be mentioned in all your Bills / Invoices invariably.</li>
+                    <li>Details of our Purchase Order Number to be strictly mentioned in each of the Invoices and L.R.copy & Bundle and all Invoices to be sent to our Billing Address.</li>
+                    <li>Kindly upload the invoice and LR (Lorry Receipt) copy to our B2B Supplier Portal using your login credentials. This will help us process your order and maintain our records efficiently. Thank you for your cooperation.</li>
+                    <li>Book your Goods depend upon our Despatch date.</li>
                 </ol>
-                <p>Declaration: By placing an order through the portal, the buyer confirms that they have read,
-                    understood, and agreed to these Terms & Conditions.</p>
             </div>
 
             <div
@@ -398,7 +386,12 @@
             </div>
 
             <div class="footer">
-                <div class="footer-line">Buyer Signature</div>
+                <div class="footer-line">
+                    <% if (order.signature_url) { %>
+                        <img src="<%= baseUrl %><%= order.signature_url %>" style="max-height: 50px; margin-bottom: 5px; max-width: 150px;" alt="Signature" /><br/>
+                    <% } %>
+                    Buyer Signature
+                </div>
                 <div class="footer-line">Authorised Signatory</div>
             </div>
 

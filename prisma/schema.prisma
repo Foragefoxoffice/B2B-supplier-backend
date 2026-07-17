@@ -180,6 +180,7 @@ model PurchaseOrder {
   tracking_number String?
   booking_copy_url String?
   invoice_copy_url String?
+  signature_url    String?
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
   deleted_at    DateTime?

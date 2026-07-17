@@ -143,8 +143,17 @@ exports.getOrders = async (req, res, next) => {
 
 exports.createOrder = async (req, res, next) => {
   try {
-    const { supplier_id, transporter_id, items, order_given_by, phone_number, remarks } = req.body;
+    let { supplier_id, transporter_id, items, order_given_by, phone_number, remarks } = req.body;
     
+    // Parse items if they come as a JSON string from FormData
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (err) {
+        return res.status(400).json({ success: false, message: 'Invalid items format' });
+      }
+    }
+
     // Support legacy single item payload
     const orderItems = items || [req.body];
     const targetSupplierId = supplier_id || req.body.supplier_id || (orderItems.length > 0 ? (await prisma.product.findUnique({ where: { id: parseInt(orderItems[0].product_id) } }))?.supplier_id : null);
@@ -181,6 +190,8 @@ exports.createOrder = async (req, res, next) => {
     const count = await prisma.purchaseOrder.count();
     const poNumber = `PO-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
+    const signature_url = req.file ? `/uploads/${req.file.filename}` : null;
+
     const operations = [
       prisma.purchaseOrder.create({
         data: {
@@ -193,6 +204,7 @@ exports.createOrder = async (req, res, next) => {
           order_given_by: order_given_by || null,
           phone_number: phone_number || null,
           ...(transporter_id && { transporter_id: parseInt(transporter_id) }),
+          ...(signature_url && { signature_url }),
           items: {
             create: itemsData
           }
@@ -293,6 +305,7 @@ exports.createOrder = async (req, res, next) => {
         const emails = [];
         if (process.env.SMTP_USER) emails.push(process.env.SMTP_USER);
         if (fullOrder.supplier && fullOrder.supplier.email) emails.push(fullOrder.supplier.email);
+        if (buyer && buyer.email && !emails.includes(buyer.email)) emails.push(buyer.email);
 
         if (emails.length > 0) {
           await emailService.sendOrderEmail(
@@ -348,32 +361,116 @@ exports.updateOrderStatus = async (req, res, next) => {
       }
     });
 
-    if (isSupplier) {
-      const notificationService = require('../services/notification.service');
-      const supplier = await prisma.supplier.findUnique({ where: { id: req.user.supplier_id } });
-      const supplierName = supplier ? supplier.name : 'A supplier';
-      
-      let title = '';
-      let message = '';
-      
-      if (status === 'ACCEPTED') {
-          title = 'Order Approved';
-          message = `${supplierName} has approved Order #${order.po_number}`;
-      } else if (status === 'REJECTED') {
-          title = 'Order Rejected';
-          message = `${supplierName} has rejected Order #${order.po_number}`;
-      } else if (status === 'DISPATCHED') {
-          title = 'Order Dispatched';
-          message = `${supplierName} has dispatched Order #${order.po_number}`;
-      }
+    // Notifications
+    const notificationService = require('../services/notification.service');
+    let title = '';
+    let message = '';
+    let updaterName = '';
 
-      if (title) {
-          notificationService.sendNotificationToAdmins(
-              title,
-              message,
-              'ORDER_UPDATE'
-          ).catch(err => console.error('Failed to notify admins of order update:', err));
-      }
+    if (isSupplier) {
+      const supplier = await prisma.supplier.findUnique({ where: { id: req.user.supplier_id } });
+      updaterName = supplier ? supplier.name : 'A supplier';
+    } else {
+      updaterName = 'Admin';
+    }
+
+    if (status === 'ACCEPTED') {
+        title = 'Order Approved';
+        message = `${updaterName} has approved Order #${order.po_number}`;
+    } else if (status === 'REJECTED') {
+        title = 'Order Rejected';
+        message = `${updaterName} has rejected Order #${order.po_number}`;
+    } else if (status === 'DISPATCHED') {
+        title = 'Order Dispatched';
+        message = `${updaterName} has dispatched Order #${order.po_number}`;
+    } else if (status === 'COMPLETED') {
+        title = 'Order Delivered';
+        message = `${updaterName} has marked Order #${order.po_number} as delivered`;
+    }
+
+    if (title) {
+        if (isSupplier) {
+            // Supplier updated it -> Notify admins
+            notificationService.sendNotificationToAdmins(
+                title,
+                message,
+                'ORDER_UPDATE'
+            ).catch(err => console.error('Failed to notify admins of order update:', err));
+        } else {
+            // Admin updated it -> Notify supplier and other admins
+            notificationService.sendNotificationToSupplier(
+                order.supplier_id,
+                title,
+                message,
+                'ORDER_UPDATE'
+            ).catch(err => console.error('Failed to notify supplier of order update:', err));
+            
+            notificationService.sendNotificationToAdmins(
+                title,
+                message,
+                'ORDER_UPDATE'
+            ).catch(err => console.error('Failed to notify admins of order update:', err));
+        }
+    }
+
+    if (status === 'COMPLETED') {
+      (async () => {
+        try {
+          const fullOrder = await prisma.purchaseOrder.findUnique({
+            where: { id: order.id },
+            include: {
+              supplier: true,
+              transporter: true,
+              items: {
+                include: {
+                  product: {
+                    include: {
+                      images: true
+                    }
+                  }
+                }
+              }
+            }
+          });
+
+          const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+          
+          const html = await require('ejs').renderFile(
+            require('path').join(__dirname, '../templates/delivery.ejs'), 
+            { order: fullOrder, baseUrl }
+          );
+
+          const emails = [];
+          if (process.env.SMTP_USER) emails.push(process.env.SMTP_USER);
+
+          // Get all admins to notify them about the delivery
+          const admins = await prisma.user.findMany({
+            where: {
+              role: {
+                name: { in: ['SUPER_ADMIN', 'ADMIN'] }
+              },
+              status: 'ACTIVE'
+            }
+          });
+          
+          admins.forEach(admin => {
+            if (admin.email && !emails.includes(admin.email)) {
+              emails.push(admin.email);
+            }
+          });
+
+          if (emails.length > 0) {
+            const emailService = require('../services/email.service');
+            await emailService.sendDeliveryEmail(
+              emails,
+              `Order Delivered: ${fullOrder.po_number}`,
+              html
+            );
+          }
+        } catch (err) {
+          console.error('Failed to send delivery email:', err);
+        }
+      })();
     }
 
     res.status(200).json({ success: true, data: order });
@@ -405,6 +502,157 @@ exports.deleteOrder = async (req, res, next) => {
     });
 
     res.status(200).json({ success: true, message: 'Order deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.downloadOrderPdf = async (req, res, next) => {
+  try {
+    const isSupplier = req.user.role === 'SUPPLIER';
+    const orderId = parseInt(req.params.id);
+
+    const fullOrder = await prisma.purchaseOrder.findUnique({
+      where: { id: orderId },
+      include: {
+        supplier: true,
+        transporter: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!fullOrder || fullOrder.deleted_at) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (isSupplier && fullOrder.supplier_id !== req.user.supplier_id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
+    }
+
+    fullOrder.buyer = { first_name: 'Authorized', last_name: 'Person' };
+
+    let logoBase64 = null;
+    try {
+      const logoPath = path.join(__dirname, '../../../B2B-supplier-frontend/public/images/kannan_silks_logo.png');
+      if (fs.existsSync(logoPath)) {
+        const logoData = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
+      }
+    } catch (e) {
+      console.error("Logo not found", e);
+    }
+
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    
+    if (fullOrder.items) {
+      fullOrder.items.forEach(item => {
+        if (item.product && item.product.images) {
+          item.product.images.forEach(img => {
+            if (img.url && img.url.startsWith('/')) {
+              img.url = baseUrl + img.url;
+            }
+          });
+        }
+      });
+    }
+
+    const html = await ejs.renderFile(path.join(__dirname, '../templates/order.ejs'), {
+      order: fullOrder,
+      logo: logoBase64,
+      amountInWords: (amount) => numberToWords.toWords(Math.round(amount)).toUpperCase(),
+      baseUrl: baseUrl
+    });
+
+    const pdfBuffer = await pdfService.generatePdf(html);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=${fullOrder.po_number}.pdf`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.viewOrderHtml = async (req, res, next) => {
+  try {
+    const isSupplier = req.user.role === 'SUPPLIER';
+    const orderId = parseInt(req.params.id);
+    const numberToWords = require('number-to-words');
+    const ejs = require('ejs');
+    const path = require('path');
+    const fs = require('fs');
+
+    const fullOrder = await prisma.purchaseOrder.findUnique({
+      where: { id: orderId },
+      include: {
+        supplier: true,
+        transporter: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!fullOrder || fullOrder.deleted_at) {
+      return res.status(404).send('Order not found');
+    }
+
+    if (isSupplier && fullOrder.supplier_id !== req.user.supplier_id) {
+      return res.status(403).send('Not authorized to view this order');
+    }
+
+    fullOrder.buyer = { first_name: 'Authorized', last_name: 'Person' };
+
+    let logoBase64 = null;
+    try {
+      const logoPath = path.join(__dirname, '../../../B2B-supplier-frontend/public/images/kannan_silks_logo.png');
+      if (fs.existsSync(logoPath)) {
+        const logoData = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;
+      }
+    } catch (e) {
+      console.error("Logo not found", e);
+    }
+
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    
+    if (fullOrder.items) {
+      fullOrder.items.forEach(item => {
+        if (item.product && item.product.images) {
+          item.product.images.forEach(img => {
+            if (img.url && img.url.startsWith('/')) {
+              img.url = baseUrl + img.url;
+            }
+          });
+        }
+      });
+    }
+
+    const html = await ejs.renderFile(path.join(__dirname, '../templates/order.ejs'), {
+      order: fullOrder,
+      logo: logoBase64,
+      amountInWords: (amount) => numberToWords.toWords(Math.round(amount)).toUpperCase(),
+      baseUrl: baseUrl
+    });
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+
   } catch (error) {
     next(error);
   }

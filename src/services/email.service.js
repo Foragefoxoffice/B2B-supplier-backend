@@ -45,3 +45,27 @@ exports.sendOrderEmail = async (to, subject, text, pdfBuffer, filename) => {
     throw error;
   }
 };
+
+/**
+ * Send a delivery HTML email
+ * @param {string|string[]} to - Recipient email(s)
+ * @param {string} subject - Email subject
+ * @param {string} html - Email HTML body
+ */
+exports.sendDeliveryEmail = async (to, subject, html) => {
+  try {
+    const mailOptions = {
+      from: `"Kannan Silks" <${process.env.SMTP_USER}>`,
+      to: Array.isArray(to) ? to.join(', ') : to,
+      subject,
+      html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Delivery Email sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending delivery email:', error);
+    throw error;
+  }
+};

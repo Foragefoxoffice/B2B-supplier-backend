@@ -201,13 +201,13 @@
             const v = item.product.images.find(img => img.id === item.variant_id);
             if (v) {
               color = v.color || 'N/A';
-              imgUrl = v.base64 || v.url;
+              imgUrl = v.url;
             }
           }
           if (color === 'N/A' && item.product.images && item.product.images.length > 0) {
             const v = item.product.images[0];
             color = v.color || 'N/A';
-            if (!imgUrl) imgUrl = v.base64 || v.url;
+            if (!imgUrl) imgUrl = v.url;
           }
           if (imgUrl && imgUrl.startsWith('/')) {
             imgUrl = baseUrl + imgUrl;

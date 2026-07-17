@@ -270,7 +270,7 @@ exports.createOrder = async (req, res, next) => {
 
         let logoBase64 = null;
         try {
-          const logoPath = path.join(__dirname, '../../../B2B-supplier-frontend/public/images/kannan_silks_logo.png');
+          const logoPath = path.join(__dirname, '../../public/images/kannan_silks_logo.png');
           if (fs.existsSync(logoPath)) {
             const logoData = fs.readFileSync(logoPath);
             logoBase64 = `data:image/png;base64,${logoData.toString('base64')}`;

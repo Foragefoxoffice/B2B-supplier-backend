@@ -15,7 +15,7 @@ exports.generatePdf = async (html) => {
     const page = await browser.newPage();
     
     // Set content and wait until network is idle so images load
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'networkidle2' });
 
     // Generate PDF buffer
     const pdfBuffer = await page.pdf({

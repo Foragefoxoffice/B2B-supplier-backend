@@ -57,6 +57,40 @@ exports.getStats = async (req, res, next) => {
       })
     ]);
 
+    const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany({
+      where: { deleted_at: null },
+      select: {
+        id: true,
+        name: true,
+        products: {
+          where: { deleted_at: null },
+          select: {
+            id: true
+          }
+        },
+        purchase_orders: {
+          where: { deleted_at: null },
+          select: {
+            status: true
+          }
+        }
+      }
+    }).then(sups => sups.map(s => {
+      const orders = s.purchase_orders || [];
+      const completed = orders.filter(o => ['DELIVERED', 'COMPLETED'].includes(o.status)).length;
+      const pending = orders.filter(o => ['SENT', 'ACCEPTED', 'PENDING', 'IN_PRODUCTION', 'DISPATCHED'].includes(o.status)).length;
+      const rejected = orders.filter(o => ['REJECTED', 'CANCELLED'].includes(o.status)).length;
+      return {
+        id: s.id,
+        name: s.name,
+        productsCount: s.products ? s.products.length : 0,
+        completedCount: completed,
+        pendingCount: pending,
+        rejectedCount: rejected,
+        totalOrders: orders.length
+      };
+    })) : [];
+
     res.status(200).json({
       success: true,
       data: {
@@ -65,7 +99,8 @@ exports.getStats = async (req, res, next) => {
         totalOrders,
         pendingProducts,
         pendingOrders,
-        recentMessages
+        recentMessages,
+        supplierBreakdown
       }
     });
   } catch (error) {

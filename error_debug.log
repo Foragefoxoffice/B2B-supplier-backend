@@ -1,1 +1,232 @@
-2026-07-15T12:23:21.259Z\nundefined\n\n2026-07-15T12:23:45.313Z\n\n\n"Images only!"\n\n2026-07-15T12:24:00.370Z\n\n\n"Images only!"\n\n2026-07-17T06:56:06.660Z\n\n\n"Images and PDFs only!"\n\n2026-07-17T06:56:36.743Z\n\n\n"Images and PDFs only!"\n\n2026-07-17T07:02:00.049Z\n\n\n"Images and PDFs only!"\n\n2026-07-17T07:02:33.136Z\n\n\n"Images and PDFs only!"\n\n
+2026-07-15T12:23:21.259Z\nundefined\n\n2026-07-15T12:23:45.313Z\n\n\n"Images only!"\n\n2026-07-15T12:24:00.370Z\n\n\n"Images only!"\n\n2026-07-17T06:56:06.660Z\n\n\n"Images and PDFs only!"\n\n2026-07-17T06:56:36.743Z\n\n\n"Images and PDFs only!"\n\n2026-07-17T07:02:00.049Z\n\n\n"Images and PDFs only!"\n\n2026-07-17T07:02:33.136Z\n\n\n"Images and PDFs only!"\n\n2026-07-20T07:51:50.077Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:51:52.269Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:51:52.301Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:51:55.785Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:52:02.019Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:52:02.084Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:52:11.787Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:52:11.826Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:52:33.773Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:53:12.385Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n2026-07-20T07:53:12.422Z\nPrismaClientUnknownRequestError: 
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.
+    at In.handleRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async exports.getStats (C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:45)\n
+Invalid `prisma.supplier.findMany()` invocation in
+C:\Users\ijocr\Documents\B2B_supplier_portal\B2B-supplier-backend\src\controllers\dashboard.controller.js:60:67
+
+  57   })
+  58 ]);
+  59 
+→ 60 const supplierBreakdown = !isSupplier ? await prisma.supplier.findMany(
+Unknown nested field 'purchaseOrders' for operation findManySupplier does not match any query.\n{"name":"PrismaClientUnknownRequestError","clientVersion":"5.10.0"}\n\n

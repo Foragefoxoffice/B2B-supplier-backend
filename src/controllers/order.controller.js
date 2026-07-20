@@ -10,6 +10,7 @@ exports.getOrders = async (req, res, next) => {
   try {
     const isSupplier = req.user.role === 'SUPPLIER';
     const supplierId = req.user.supplier_id;
+    const querySupplierId = req.query.supplier_id || req.query.supplierId;
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -22,7 +23,7 @@ exports.getOrders = async (req, res, next) => {
 
     const whereClause = {
       deleted_at: null,
-      ...(isSupplier && { supplier_id: supplierId }),
+      ...(isSupplier ? { supplier_id: supplierId } : (querySupplierId ? { supplier_id: parseInt(querySupplierId) } : {})),
     };
 
     if (status && status !== 'All Status') {
@@ -77,7 +78,7 @@ exports.getOrders = async (req, res, next) => {
     const allOrdersStats = await prisma.purchaseOrder.findMany({
       where: {
         deleted_at: null,
-        ...(isSupplier && { supplier_id: supplierId }),
+        ...(isSupplier ? { supplier_id: supplierId } : (querySupplierId ? { supplier_id: parseInt(querySupplierId) } : {})),
       },
       select: { status: true, date: true }
     });
@@ -501,6 +502,25 @@ exports.deleteOrder = async (req, res, next) => {
       where: { id: orderId },
       data: { deleted_at: new Date() }
     });
+
+    // Notify supplier and admins via FCM and WebSocket (triggers immediate refresh)
+    const notificationService = require('../services/notification.service');
+    const updaterName = req.user.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin';
+    const title = 'Order Deleted';
+    const message = `${updaterName} has deleted Order #${order.po_number}`;
+
+    notificationService.sendNotificationToSupplier(
+      order.supplier_id,
+      title,
+      message,
+      'ORDER_UPDATE'
+    ).catch(err => console.error('Failed to notify supplier of order deletion:', err));
+
+    notificationService.sendNotificationToAdmins(
+      title,
+      message,
+      'ORDER_UPDATE'
+    ).catch(err => console.error('Failed to notify admins of order deletion:', err));
 
     res.status(200).json({ success: true, message: 'Order deleted successfully' });
   } catch (error) {

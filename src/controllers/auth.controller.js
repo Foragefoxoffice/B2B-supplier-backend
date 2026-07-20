@@ -60,6 +60,7 @@ exports.login = async (req, res, next) => {
         role: user.role.name,
         supplier_id: user.supplier_id,
         company_name: user.supplier ? user.supplier.name : null,
+        low_stock_threshold: user.supplier ? user.supplier.low_stock_threshold : null,
       },
     });
   } catch (error) {
@@ -82,6 +83,7 @@ exports.getMe = async (req, res, next) => {
         supplier: {
           select: {
             name: true,
+            low_stock_threshold: true,
           }
         }
       },
@@ -89,7 +91,8 @@ exports.getMe = async (req, res, next) => {
 
     const userData = {
       ...user,
-      company_name: user.supplier ? user.supplier.name : null
+      company_name: user.supplier ? user.supplier.name : null,
+      low_stock_threshold: user.supplier ? user.supplier.low_stock_threshold : null
     };
     delete userData.supplier;
 
@@ -300,14 +303,20 @@ exports.updateProfile = async (req, res, next) => {
         phone: true,
         role: { select: { name: true } },
         supplier_id: true,
-        supplier: { select: { name: true } }
+        supplier: {
+          select: {
+            name: true,
+            low_stock_threshold: true
+          }
+        }
       }
     });
 
     const userData = {
       ...user,
       role: user.role.name,
-      company_name: user.supplier ? user.supplier.name : null
+      company_name: user.supplier ? user.supplier.name : null,
+      low_stock_threshold: user.supplier ? user.supplier.low_stock_threshold : null
     };
     delete userData.supplier;
 
@@ -328,6 +337,72 @@ exports.updateProfile = async (req, res, next) => {
     );
 
     res.status(200).json({ success: true, message: 'Profile updated successfully', data: userData });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateSupplierSettings = async (req, res, next) => {
+  try {
+    const { low_stock_threshold } = req.body;
+
+    if (req.user.role !== 'SUPPLIER' || !req.user.supplier_id) {
+      return res.status(403).json({ success: false, message: 'Only suppliers can update supplier settings' });
+    }
+
+    const thresholdVal = parseInt(low_stock_threshold);
+    if (isNaN(thresholdVal) || thresholdVal < 0) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid low stock threshold' });
+    }
+
+    await prisma.supplier.update({
+      where: { id: req.user.supplier_id },
+      data: {
+        low_stock_threshold: thresholdVal
+      }
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        phone: true,
+        role: { select: { name: true } },
+        supplier_id: true,
+        supplier: {
+          select: {
+            name: true,
+            low_stock_threshold: true
+          }
+        }
+      }
+    });
+
+    const userData = {
+      ...user,
+      role: user.role.name,
+      company_name: user.supplier ? user.supplier.name : null,
+      low_stock_threshold: user.supplier ? user.supplier.low_stock_threshold : null
+    };
+    delete userData.supplier;
+
+    await prisma.activityLog.create({
+      data: {
+        user_id: req.user.id,
+        action: 'UPDATE_SUPPLIER_SETTINGS',
+        module: 'Auth',
+        details: `Supplier updated low stock threshold to ${thresholdVal}`
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Supplier settings updated successfully',
+      data: userData
+    });
   } catch (error) {
     next(error);
   }

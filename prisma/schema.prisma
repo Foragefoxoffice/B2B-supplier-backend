@@ -91,6 +91,7 @@ model Supplier {
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
   deleted_at     DateTime?
+  low_stock_threshold Int  @default(10)
 
   users           User[]
   products        Product[]

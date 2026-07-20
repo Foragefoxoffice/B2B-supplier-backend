@@ -15,7 +15,7 @@ router.route('/:id/status')
   .patch(uploadDoc.fields([{ name: 'bookingCopy', maxCount: 1 }, { name: 'invoiceCopy', maxCount: 1 }]), updateOrderStatus);
 
 router.route('/:id')
-  .delete(deleteOrder);
+  .delete(authorize('SUPER_ADMIN', 'ADMIN'), deleteOrder);
 
 router.route('/:id/pdf')
   .get(downloadOrderPdf);

@@ -38,14 +38,135 @@ exports.login = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Account is not active' });
     }
 
+    const currentIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+    if (user.role.name === 'ADMIN' || user.role.name === 'SUPER_ADMIN') {
+      if (!user.last_login_ip || user.last_login_ip !== currentIp) {
+        // Generate 6 digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            reset_otp: otp,
+            reset_otp_expires_at: expiresAt,
+          },
+        });
+
+        // Attempt to send email
+        const transporter = createTransporter();
+        
+        if (transporter) {
+          try {
+            await transporter.sendMail({
+              from: `"B2B Supplier Portal" <${process.env.SMTP_USER}>`,
+              to: email,
+              subject: 'Login OTP for New IP Verification',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                  <h2 style="color: #1e3a8a; text-align: center;">New Login Location Detected</h2>
+                  <p style="color: #334155; font-size: 16px;">Hello ${user.first_name},</p>
+                  <p style="color: #334155; font-size: 16px;">We noticed a login attempt from a new IP address. Please use this OTP to complete your login:</p>
+                  <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #2563eb;">${otp}</span>
+                  </div>
+                  <p style="color: #334155; font-size: 14px;">This OTP is valid for 10 minutes. Do not share this code with anyone.</p>
+                </div>
+              `,
+            });
+            console.log(`OTP sent to ${email} via email.`);
+          } catch (emailError) {
+            console.error("Error sending email:", emailError);
+            console.log(`\n=========================================`);
+            console.log(`OTP for ${email}: ${otp}`);
+            console.log(`=========================================\n`);
+          }
+        } else {
+          console.log(`\n=========================================`);
+          console.log(`SMTP NOT CONFIGURED - OTP for ${email}: ${otp}`);
+          console.log(`=========================================\n`);
+        }
+
+        return res.status(200).json({ success: true, requireOtp: true, message: 'New IP detected. OTP sent to your email.' });
+      }
+    }
+
     const token = generateToken(user.id, user.role.name, user.supplier_id, user.password);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { last_login_ip: currentIp }
+    });
 
     await prisma.activityLog.create({
       data: {
         user_id: user.id,
         action: 'LOGIN',
         module: 'Auth',
-        details: 'User logged in successfully'
+        details: 'User logged in successfully',
+        ip_address: currentIp
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role.name,
+        supplier_id: user.supplier_id,
+        company_name: user.supplier ? user.supplier.name : null,
+        low_stock_threshold: user.supplier ? user.supplier.low_stock_threshold : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.verifyLoginOtp = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Please provide email and OTP' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { role: true, supplier: true },
+    });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.reset_otp !== otp || user.reset_otp_expires_at < new Date()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    const currentIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const token = generateToken(user.id, user.role.name, user.supplier_id, user.password);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        last_login_ip: currentIp,
+        reset_otp: null,
+        reset_otp_expires_at: null,
+      },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        user_id: user.id,
+        action: 'LOGIN',
+        module: 'Auth',
+        details: 'User logged in successfully after OTP verification',
+        ip_address: currentIp
       }
     });
 

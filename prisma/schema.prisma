@@ -20,6 +20,7 @@ model User {
   reset_otp_expires_at DateTime?
   status               String    @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
   fcm_token            String?   @db.Text
+  last_login_ip        String?
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
   deleted_at           DateTime?

@@ -15,6 +15,7 @@ const transporterRoutes = require('./routes/transporter.routes');
 const activityLogRoutes = require('./routes/activityLog.routes');
 const userRoutes = require('./routes/user.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const cartRoutes = require('./routes/cart.routes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/transporters', transporterRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Error Handler Middleware
 app.use(errorHandler);

@@ -117,6 +117,7 @@ exports.login = async (req, res, next) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
+        profile_image: user.profile_image,
         role: user.role.name,
         supplier_id: user.supplier_id,
         company_name: user.supplier ? user.supplier.name : null,
@@ -178,6 +179,7 @@ exports.verifyLoginOtp = async (req, res, next) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
+        profile_image: user.profile_image,
         role: user.role.name,
         supplier_id: user.supplier_id,
         company_name: user.supplier ? user.supplier.name : null,
@@ -199,6 +201,7 @@ exports.getMe = async (req, res, next) => {
         last_name: true,
         email: true,
         phone: true,
+        profile_image: true,
         role: true,
         supplier_id: true,
         supplier: {
@@ -407,7 +410,7 @@ exports.changePassword = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { first_name, last_name, phone } = req.body;
+    const { first_name, last_name, phone, profile_image } = req.body;
 
     const user = await prisma.user.update({
       where: { id: req.user.id },
@@ -415,6 +418,7 @@ exports.updateProfile = async (req, res, next) => {
         first_name,
         last_name,
         phone,
+        profile_image,
       },
       select: {
         id: true,
@@ -422,6 +426,7 @@ exports.updateProfile = async (req, res, next) => {
         last_name: true,
         email: true,
         phone: true,
+        profile_image: true,
         role: { select: { name: true } },
         supplier_id: true,
         supplier: {

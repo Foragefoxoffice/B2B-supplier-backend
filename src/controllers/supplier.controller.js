@@ -260,17 +260,27 @@ exports.updateSupplier = async (req, res, next) => {
 
 exports.deleteSupplier = async (req, res, next) => {
   try {
-    const supplier = await prisma.supplier.findUnique({ where: { id: parseInt(req.params.id) } });
+    const supplierId = parseInt(req.params.id);
+    const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
 
     if (!supplier || supplier.deleted_at) {
       return res.status(404).json({ success: false, message: 'Supplier not found' });
     }
 
-    // Soft delete
-    await prisma.supplier.update({
-      where: { id: parseInt(req.params.id) },
-      data: { deleted_at: new Date() },
-    });
+    // Soft delete both supplier and all associated users in a transaction
+    await prisma.$transaction([
+      prisma.supplier.update({
+        where: { id: supplierId },
+        data: { deleted_at: new Date() },
+      }),
+      prisma.user.updateMany({
+        where: { supplier_id: supplierId },
+        data: {
+          deleted_at: new Date(),
+          status: 'INACTIVE',
+        },
+      }),
+    ]);
 
     res.status(200).json({ success: true, message: 'Supplier deleted successfully' });
   } catch (error) {

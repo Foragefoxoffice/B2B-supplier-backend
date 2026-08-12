@@ -60,8 +60,31 @@ async function main() {
     },
   });
 
+  const demoSuperAdminPassword = await bcrypt.hash('testkannansilks@#2k26', 10);
+  const demoSuperAdmin = await prisma.user.upsert({
+    where: { email: 'testkannansilks@gmail.com' },
+    update: {
+      password: demoSuperAdminPassword,
+      first_name: 'Super',
+      last_name: 'Admin',
+      role_id: superAdminRole.id,
+      status: 'ACTIVE',
+    },
+    create: {
+      email: 'testkannansilks@gmail.com',
+      password: demoSuperAdminPassword,
+      first_name: 'Super',
+      last_name: 'Admin',
+      phone: '9787738094',
+      role_id: superAdminRole.id,
+      status: 'ACTIVE',
+    },
+  });
+
   console.log('Created Admin User:', admin.email);
   console.log('Password: password123');
+  console.log('Created Demo Super Admin User:', demoSuperAdmin.email);
+  console.log('Password: testkannansilks@#2k26');
 }
 
 main()

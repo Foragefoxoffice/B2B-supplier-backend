@@ -40,7 +40,8 @@ exports.login = async (req, res, next) => {
 
     const currentIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-    if (user.role.name === 'ADMIN' || user.role.name === 'SUPER_ADMIN') {
+    // Bypass IP OTP check for demo super admin account (testkannansilks@gmail.com) for Google App Review / Direct Login
+    if ((user.role.name === 'ADMIN' || user.role.name === 'SUPER_ADMIN') && user.email !== 'testkannansilks@gmail.com') {
       if (!user.last_login_ip || user.last_login_ip !== currentIp) {
         // Generate 6 digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();

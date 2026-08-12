@@ -534,3 +534,33 @@ exports.updateSupplierSettings = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.requestAccountDeletion = async (req, res, next) => {
+  try {
+    const { email, phone, accountType, reason } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (user) {
+      await prisma.activityLog.create({
+        data: {
+          user_id: user.id,
+          action: 'ACCOUNT_DELETION_REQUESTED',
+          module: 'Auth',
+          details: `Account deletion requested via public form. Type: ${accountType || 'N/A'}. Phone: ${phone || 'N/A'}. Reason: ${reason || 'None provided'}`
+        }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deletion request submitted successfully. Our compliance team will process your request within 7 business days.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};

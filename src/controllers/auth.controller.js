@@ -57,7 +57,7 @@ exports.login = async (req, res, next) => {
 
         // Attempt to send email
         const transporter = createTransporter();
-        
+
         if (transporter) {
           try {
             await transporter.sendMail({
@@ -141,7 +141,7 @@ exports.verifyLoginOtp = async (req, res, next) => {
       where: { email },
       include: { role: true, supplier: true },
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -234,11 +234,11 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide an email' });
     }
 
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { email },
       include: { role: true }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -265,7 +265,7 @@ exports.forgotPassword = async (req, res, next) => {
 
     // Attempt to send email
     const transporter = createTransporter();
-    
+
     if (transporter) {
       try {
         await transporter.sendMail({
@@ -365,7 +365,7 @@ exports.resetPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ success: false, message: 'Please provide current and new passwords' });
     }
@@ -397,9 +397,9 @@ exports.changePassword = async (req, res, next) => {
     });
 
     await sendNotificationToUser(
-      req.user.id, 
-      'Password Changed', 
-      'Your password was successfully updated.', 
+      req.user.id,
+      'Password Changed',
+      'Your password was successfully updated.',
       'SYSTEM'
     );
 
@@ -457,9 +457,9 @@ exports.updateProfile = async (req, res, next) => {
     });
 
     await sendNotificationToUser(
-      req.user.id, 
-      'Profile Updated', 
-      'Your profile details were successfully updated.', 
+      req.user.id,
+      'Profile Updated',
+      'Your profile details were successfully updated.',
       'SYSTEM'
     );
 

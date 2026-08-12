@@ -545,15 +545,43 @@ exports.requestAccountDeletion = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (user) {
-      await prisma.activityLog.create({
-        data: {
-          user_id: user.id,
-          action: 'ACCOUNT_DELETION_REQUESTED',
-          module: 'Auth',
-          details: `Account deletion requested via public form. Type: ${accountType || 'N/A'}. Phone: ${phone || 'N/A'}. Reason: ${reason || 'None provided'}`
-        }
-      });
+    // 1. Log to Activity Logs in DB
+    await prisma.activityLog.create({
+      data: {
+        user_id: user ? user.id : null,
+        action: 'ACCOUNT_DELETION_REQUESTED',
+        module: 'Auth',
+        details: `Account deletion requested for email: ${email}. Phone: ${phone || 'N/A'}. Account Type: ${accountType || 'N/A'}. Reason: ${reason || 'None provided'}`
+      }
+    });
+
+    // 2. Send email notification to Admin inbox
+    const transporter = createTransporter();
+    if (transporter) {
+      try {
+        await transporter.sendMail({
+          from: `"B2B Portal - Account Deletion" <${process.env.SMTP_USER}>`,
+          to: 'kannansilkshandloom@gmail.com',
+          subject: `⚠️ Account Deletion Request: ${email}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+              <h2 style="color: #dc2626; text-align: center;">Account & Data Deletion Request</h2>
+              <p style="color: #334155; font-size: 15px;">A user has submitted a formal account deletion request via the web portal:</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background-color: #f8fafc;"><td style="padding: 10px; font-weight: bold;">User Email:</td><td style="padding: 10px;">${email}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold;">Phone Number:</td><td style="padding: 10px;">${phone || 'Not provided'}</td></tr>
+                <tr style="background-color: #f8fafc;"><td style="padding: 10px; font-weight: bold;">Account Type:</td><td style="padding: 10px;">${accountType || 'N/A'}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold;">User Exists in DB:</td><td style="padding: 10px;">${user ? 'Yes (User ID: ' + user.id + ')' : 'No'}</td></tr>
+                <tr style="background-color: #f8fafc;"><td style="padding: 10px; font-weight: bold;">Reason:</td><td style="padding: 10px;">${reason || 'None provided'}</td></tr>
+              </table>
+              <p style="color: #64748b; font-size: 13px;">Please verify and process this deletion request within 7 business days per Google Play Data Safety policy.</p>
+            </div>
+          `
+        });
+        console.log(`Deletion request email sent to admin for ${email}`);
+      } catch (emailErr) {
+        console.error('Error sending deletion request email to admin:', emailErr);
+      }
     }
 
     res.status(200).json({
